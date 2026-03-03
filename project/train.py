@@ -106,8 +106,12 @@ class Trainer:
         )
 
         # ---- AMP ----
-        self.scaler_G = GradScaler("cuda", enabled=cfg.use_amp)
-        self.scaler_D = GradScaler("cuda", enabled=cfg.use_amp)
+        # Disable AMP on CPU — bfloat16 autocast causes NaN in deep pipelines
+        self.use_amp = cfg.use_amp and self.device.type == "cuda"
+        if cfg.use_amp and not self.use_amp:
+            print("AMP disabled (no CUDA). Running in float32.")
+        self.scaler_G = GradScaler("cuda", enabled=self.use_amp)
+        self.scaler_D = GradScaler("cuda", enabled=self.use_amp)
 
         # ---- Logging ----
         self.writer = None
@@ -190,7 +194,7 @@ class Trainer:
 
                 self.optimizer_G.zero_grad()
 
-                with autocast(str(self.device), enabled=self.cfg.use_amp):
+                with autocast(str(self.device), enabled=self.use_amp):
                     z = self.encoder3d(cbct)  # (B, latent_dim)
                     # Generate volume at lower resolution for memory efficiency
                     gen_res = min(self.cfg.cbct_volume_size, 64)
@@ -267,11 +271,12 @@ class Trainer:
         self.encoder3d.eval()
 
         px_optimizer = torch.optim.Adam(
-            self.encoder2d.parameters(),
+            list(self.encoder2d.parameters())
+            + list(self.nerf_decoder.parameters()),
             lr=self.cfg.learning_rate_g,
             betas=(self.cfg.beta1, self.cfg.beta2),
         )
-        scaler = GradScaler("cuda", enabled=self.cfg.use_amp)
+        scaler = GradScaler("cuda", enabled=self.use_amp)
 
         for epoch in range(1, num_epochs + 1):
             self.encoder2d.train()
@@ -283,7 +288,7 @@ class Trainer:
 
                 px_optimizer.zero_grad()
 
-                with autocast(str(self.device), enabled=self.cfg.use_amp):
+                with autocast(str(self.device), enabled=self.use_amp):
                     z_px = self.encoder2d(px)  # (B, latent_dim)
 
                     # Generate CBCT from PX latent
@@ -303,11 +308,19 @@ class Trainer:
 
                     loss = loss_proj + self.cfg.lambda_structural * loss_ssim
 
+                # Skip NaN losses to prevent poisoning the model
+                if torch.isnan(loss) or torch.isinf(loss):
+                    print(f"  [Phase2] WARNING: NaN/Inf loss at batch {batch_idx+1}, skipping")
+                    px_optimizer.zero_grad()
+                    continue
+
                 scaler.scale(loss).backward()
                 if self.cfg.grad_clip > 0:
                     scaler.unscale_(px_optimizer)
                     nn.utils.clip_grad_norm_(
-                        self.encoder2d.parameters(), self.cfg.grad_clip
+                        list(self.encoder2d.parameters())
+                        + list(self.nerf_decoder.parameters()),
+                        self.cfg.grad_clip,
                     )
                 scaler.step(px_optimizer)
                 scaler.update()
@@ -397,7 +410,7 @@ class Trainer:
                 # ============ GENERATOR UPDATE ============
                 self.optimizer_G.zero_grad()
 
-                with autocast(str(self.device), enabled=self.cfg.use_amp):
+                with autocast(str(self.device), enabled=self.use_amp):
                     # --- Encode ---
                     z_px = self.encoder2d(px)      # (B, latent_dim)
                     z_cbct = self.encoder3d(cbct)   # (B, latent_dim)
@@ -479,7 +492,7 @@ class Trainer:
                 # ============ DISCRIMINATOR UPDATE ============
                 self.optimizer_D.zero_grad()
 
-                with autocast(str(self.device), enabled=self.cfg.use_amp):
+                with autocast(str(self.device), enabled=self.use_amp):
                     # Detach fake data
                     loss_D_px = self.adv_loss.discriminator_loss(
                         self.disc2d(px), self.disc2d(px_fake.detach())
