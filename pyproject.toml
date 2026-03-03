@@ -4,4 +4,13 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "matplotlib>=3.10.8",
+    "nibabel>=5.3.3",
+    "numpy>=2.4.2",
+    "pillow>=12.1.1",
+    "scipy>=1.17.1",
+    "tensorboard>=2.20.0",
+    "torch>=2.10.0",
+    "torchvision>=0.25.0",
+]
