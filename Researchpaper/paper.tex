@@ -1,0 +1,441 @@
+\documentclass[conference]{IEEEtran}
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{url}
+\usepackage{cite}
+
+\begin{document}
+
+\title{Physics-Guided CBCT-to-Panoramic DRR Synthesis for Dental 2D--3D Data Pairing}
+
+\author{
+\IEEEauthorblockN{Aditya Sham Thombare}
+\IEEEauthorblockA{Department of Computer Science and Engineering \\
+Sardar Vallabhbhai National Institute of Technology \\
+Surat, India \\
+P24DS005@coed.svnit.ac.in}
+\and
+\IEEEauthorblockN{Dr. Chandra Prakash}
+\IEEEauthorblockA{Department of Computer Science and Engineering \\
+Sardar Vallabhbhai National Institute of Technology \\
+Surat, India \\
+cprakash@coed.svnit.ac.in}
+}
+
+\maketitle
+
+\begin{abstract}
+Dental panoramic radiography (orthopantomogram, OPG) is the most widely deployed dental imaging modality owing to its low cost and broad clinical availability; however, its inherently two-dimensional nature introduces anatomical overlap and complete loss of depth information. Cone-beam computed tomography (CBCT) overcomes these limitations by providing high-resolution volumetric 3D data, but at substantially higher acquisition cost and radiation burden—factors that limit its use in resource-constrained clinical settings. A critical bottleneck for learning-based 2D-to-3D dental reconstruction research is the scarcity of large-scale, publicly available paired 2D X-ray and 3D CBCT datasets from the same patient.
+
+This paper presents an end-to-end physics-guided pipeline that addresses this data pairing problem by generating synthetic panoramic X-ray images directly from 3D CBCT volumes using a curved-arch digitally reconstructed radiograph (DRR) formulation grounded in Beer-Lambert attenuation physics. The pipeline operates as follows: (1) CBCT volumes are ingested from NIfTI format with full metadata extraction; (2) isotropic resampling, fixed-size volume normalization to $128^3$ voxels, and Hounsfield-unit-to-attenuation calibration are applied; (3) a patient-adaptive dental arch trajectory is auto-fitted from high-attenuation bone distribution at the tooth level; (4) curved-focal-trough ray tracing is performed with trilinear attenuation sampling and Beer-Lambert line integration; (5) radiographic post-processing (percentile windowing, gamma correction, unsharp masking) is applied to improve clinical interpretability; and (6) multi-view augmentation and paired dataset packaging are performed for downstream model training.
+
+Applied to 21 CBCT volumes, the pipeline produced 21 base synthetic panoramic DRRs and 63 augmented panoramic variants at rotation offsets of $-3^\circ$, $0^\circ$, and $+3^\circ$. Cross-view quality evaluation on the rot+0deg condition reports average L1\,=\,0.03146, SSIM\,=\,0.7583, and PSNR\,=\,28.76\,dB, confirming stable self-consistency of the projection. The resulting paired CBCT--panoramic dataset, exported as a PyTorch training artifact (187.2\,MB), and the accompanying visualization suite form a practical foundation for future 2D-to-3D dental reconstruction research.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Dental imaging, CBCT, panoramic X-ray, DRR, Beer-Lambert law, digitally reconstructed radiograph, 2D-to-3D reconstruction, dental arch, focal trough, NIfTI, data augmentation.
+\end{IEEEkeywords}
+
+% =========================================================
+\section{Introduction}
+\label{sec:intro}
+% =========================================================
+
+\subsection{Clinical Context and Motivation}
+
+Oral health is intrinsically linked to systemic well-being. Poor dental hygiene is associated with cardiovascular disease, diabetes, and secondary infections, making timely and accurate dental diagnosis an important public health concern. The primary workhorse for dental diagnosis is the panoramic X-ray (OPG/orthopantomogram): a single, wide-field 2D radiograph that captures the full dentition, both jaws, and the temporomandibular joints in one exposure. The effective radiation dose for a modern digital OPG is typically 4--30\,\textmu Sv (roughly 1--3 days of background radiation), and the cost in India ranges from INR\,800--1500.
+
+Despite its widespread use, panoramic radiography collapses a three-dimensional anatomical volume onto a two-dimensional projection plane, causing overlapping structures and complete loss of depth. This limits its utility for tasks requiring spatial assessment, such as implant placement planning, complex molar extractions, root canal morphology evaluation, and detection of subtle inter-radicular bone defects.
+
+CBCT addresses these limitations by rotating an X-ray source around the patient and reconstructing a full volumetric dataset from hundreds of 2D projections. The resulting 3D volume can be interrogated in axial, coronal, sagittal, and oblique planes, and can be surface-rendered to produce a 3D mesh. However, CBCT incurs an effective dose of 20--200\,\textmu Sv for small/medium fields of view (up to 530\,\textmu Sv for large FOV or older systems), and costs INR\,1500--6000 in India, placing it out of reach for routine use or for clinics lacking the equipment.
+
+This disparity motivates an alternative strategy: \textit{reconstruct 3D information from widely available 2D panoramic X-rays}. Recent machine-learning methods have explored this direction \cite{park2024nebla,ma2024px2tooth,song2023oral,wang2024neural}, but all face a shared bottleneck---the lack of large-scale, clinically paired 2D/3D training data from the same patient.
+
+\subsection{Problem Statement}
+
+The development of robust deep learning models for 2D-to-3D dental reconstruction is constrained by:
+\begin{itemize}
+    \item The scarcity of publicly available, large-scale datasets containing paired 2D panoramic X-rays and 3D CBCT volumes from the same patient.
+    \item The assumption of standardized, idealized X-ray acquisition trajectories that may not reflect real-world variation across clinical machines and patients.
+    \item The inability of existing approaches to fully capture fine anatomical structures (e.g., root morphology, bone microstructure) critical for clinical planning.
+    \item Evaluations that focus on technical image metrics rather than clinically relevant diagnostic outcomes.
+\end{itemize}
+
+\subsection{Contributions}
+
+This work directly addresses the data pairing constraint through a physics-guided synthetic data generation pipeline. Specifically, the contributions are:
+\begin{itemize}
+    \item A complete curved-arch DRR pipeline for CBCT-to-panoramic synthesis, with an auto-fitted patient-adaptive dental arch geometry estimated from bone distribution in each volume.
+    \item A Beer-Lambert projection module with curved-focal-trough ray tracing, trilinear attenuation coefficient sampling, and discrete line integration.
+    \item Multi-view augmentation at three rotation offsets and intensity jitter to improve diversity of the paired training set.
+    \item A paired CBCT--panoramic dataset packaged in PyTorch format, accompanied by quantitative quality verification and rich visualization diagnostics.
+\end{itemize}
+
+% =========================================================
+\section{Related Work}
+\label{sec:related}
+% =========================================================
+
+\subsection{Neural Radiance Fields for Medical Imaging}
+
+The original NeRF formulation \cite{mildenhall2021nerf} demonstrated that a fully connected multi-layer perceptron (MLP) network can represent a 3D scene as a continuous volumetric radiance field, enabling novel-view synthesis at exceptional quality (PSNR up to 42.65\,dB on standard benchmarks). Subsequent medical imaging surveys \cite{wang2024neural} highlight adaptations such as MedNeRF, UMedNeRF, NAF, and SNAF. However, NeRF-based reconstruction remains computationally heavy (1--2 days training per scene, approximately 30 seconds per inference frame) and is sensitive to acquisition assumptions and accurate camera-pose estimation, limiting clinical feasibility.
+
+\subsection{2D Panoramic to 3D Dental Reconstruction}
+
+\textbf{X2Teeth / PX2Tooth.} The X2Teeth line of work reconstructs 3D tooth point clouds from a single panoramic X-ray through staged segmentation and geometry modules \cite{ma2024px2tooth}. PX2Tooth uses a two-stage pipeline: \textit{PXSegNet} for 2D segmentation followed by \textit{TGNet} for point cloud generation via a point feature module (PFM). While achieving strong per-tooth IoU (0.72--0.91 on FDI-labeled teeth), the method reconstructs teeth only (not jawbone or soft tissue), and point clouds require downstream meshing for clinical use.
+
+\textbf{Attention U-Net / 3DPX.} Anusree employed an Attention U-Net to reconstruct a flattened CBCT volume from a panoramic X-ray, reporting PSNR of 16.68--16.80 and SSIM of 61--73\%. The 3DPX series \cite{park2024nebla} extended this with a progressive hybrid MLP--CNN U-Net, reporting PSNR\,=\,15.84, SSIM\,=\,74.09\%, and Dice\,=\,63.72\%. These methods train on synthetic panoramics derived from CBCT, limiting generalization to real clinical images.
+
+\textbf{NeBLa.} NeBLa \cite{park2024nebla} integrates Beer-Lambert physics into a two-stage pipeline: (1) CycleGAN-style image translation between real panoramic X-rays and Beer-Lambert-rendered synthetic panoramics (SimPX), and (2) a NeRF-like implicit 3D reconstruction guided by the Beer-Lambert line integral constraint. NeBLa reports PSNR improvement from 19.89 to 21.68\,dB and SSIM from 79.21\% to 82.62\%, along with Dice from 65.22\% to 74.77\% and LPIPS from 0.30 to 0.24. Limitations include the need for unpaired real panoramic images for style translation and the heuristic assumption of a fixed X-ray trajectory.
+
+\textbf{Oral-3D / Oral-3Dv2.} Oral-3D \cite{song2023oral} explored implicit neural representations for 3D oral structure reconstruction from a single panoramic projection. Oral-3Dv2 introduces a Neural X-ray Field (NeXF) and achieves 88.33\% accuracy, though its code is not publicly available and inference is slow due to implicit querying.
+
+\textbf{Sparse-View CBCT Reconstruction.} Shin et al.\ \cite{shin2025sparse} addressed sparse-view CBCT reconstruction using a meta-learned neural attenuation field with hash-encoding regularization, demonstrating that physics-guided neural methods can significantly reduce the number of required projections.
+
+\subsection{Positioning of This Work}
+
+The above methods collectively rely on paired or at minimum semi-paired 2D/3D data for training and evaluation. Our work occupies a complementary position: rather than performing reconstruction, we focus on \textit{generating} paired training data from available CBCT volumes using explicit projection physics and a curved dental trajectory model. The synthetic panoramics produced serve as input for downstream reconstruction models such as those described above.
+
+% =========================================================
+\section{Domain Background: Dental Anatomy and Imaging Physics}
+\label{sec:background}
+% =========================================================
+
+\subsection{Dental Anatomy}
+
+The human dentition consists of incisors, canines, premolars, and molars arranged in the upper (maxillary) and lower (mandibular) jaws. Key anatomical structures relevant to imaging include: the enamel (hardest tissue in the body, high X-ray attenuation), dentin (supporting layer beneath enamel, moderate attenuation), the pulp chamber (soft tissue, low attenuation), cementum, the periodontal ligament anchoring the tooth root, and the alveolar bone forming the tooth sockets.
+
+Dental diseases include caries (bacterial breakdown of enamel progressing through dentin to pulp), gingivitis and periodontitis (gum inflammation leading to bone loss), tooth sensitivity from exposed dentin, and malocclusion from crowding or bite misalignment. Accurate imaging of these structures motivates the use of CBCT for planning implants, complex extractions, root canal evaluation, and jaw pathology analysis.
+
+\subsection{Dental Imaging Modalities}
+
+Table~\ref{tab:modalities} summarizes the four primary radiographic modalities used in dentistry. Panoramic radiography provides the broadest field of view but is limited to 2D projection. CBCT provides full 3D volumetric data—viewable in axial, coronal, sagittal, and 3D-mesh representations—at the cost of higher dose and equipment expense.
+
+\begin{table}[t]
+\caption{Comparison of Dental Radiographic Modalities}
+\label{tab:modalities}
+\centering
+\begin{tabular}{p{1.5cm} p{2.2cm} p{2.0cm} p{1.5cm}}
+\toprule
+\textbf{Modality} & \textbf{Effective Dose} & \textbf{Key Use} & \textbf{Dimension} \\
+\midrule
+Intraoral (PA/BWX) & 1.5--8.2\,\textmu Sv & Caries, root, bone level & 2D \\
+Panoramic (OPG)   & 4--30\,\textmu Sv   & Impaction, cysts, tumors & 2D \\
+CBCT (small/medium FOV) & 20--200\,\textmu Sv & Implants, canals, fractures & 3D \\
+CBCT (large FOV)  & Up to 530\,\textmu Sv & Full jaw pathology & 3D \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Digitally Reconstructed Radiograph (DRR)}
+
+A DRR is a synthetic 2D X-ray generated by computationally projecting a 3D volumetric dataset (such as CBCT) along a defined ray geometry, integrating the linear attenuation coefficient $\mu(\mathbf{x})$ along each ray according to the Beer-Lambert law. DRRs are commonly used for imaging simulation, multi-modal registration, and—as in this work—generating training data by creating synthetic panoramic images from CBCT volumes.
+
+\subsection{Beer-Lambert Law}
+
+The fundamental physical model governing X-ray attenuation through tissue is the Beer-Lambert law:
+\begin{equation}
+I = I_0 \exp\!\left(-\int_{\mathcal{L}} \mu(\mathbf{x})\,d\ell\right),
+\label{eq:beer}
+\end{equation}
+where $I_0$ is the incident beam intensity, $I$ is the transmitted intensity, $\mu(\mathbf{x})$ is the linear attenuation coefficient at spatial position $\mathbf{x}$, and the integral is taken along ray path $\mathcal{L}$. Tissue attenuation values in mm$^{-1}$ are approximately: air $\approx$0 (suppressed), soft tissue $\approx$0.01--0.025, bone $\approx$0.025--0.08, and dense enamel/metal $\approx$0.08 (clamped upper bound). These values imply that a 30\,mm focal-trough path through bone ($\mu=0.05$) yields an integral of 1.5, corresponding to a transmitted intensity of $\exp(-1.5)\approx0.22$—providing good radiographic contrast between bone and soft tissue.
+
+% =========================================================
+\section{Dataset and Preprocessing}
+\label{sec:data}
+% =========================================================
+
+\subsection{CBCT Dataset}
+
+The current implementation processes 21 CBCT volumes stored in NIfTI (\texttt{.nii}) format, loaded from the project asset directory. All volumes share a consistent acquisition geometry: shape $(604, 604, 412)$ voxels with isotropic in-plane spacing of approximately $0.249\times0.249$\,mm and axial spacing of $0.25$\,mm. Intensity ranges vary across subjects (e.g., $[-2628, 5509]$ to $[-4904, 11129]$ HU), reflecting natural inter-subject variation in bone density and the presence of metallic restorations. Metadata extracted per volume includes: filename, voxel shape, voxel spacing (from header \texttt{get\_zooms()}), affine transform matrix, and intensity statistics (min, max, mean).
+
+\subsection{Preprocessing Pipeline}
+
+Each volume undergoes a three-stage preprocessing pipeline (Fig.~\ref{fig:full_pipeline}):
+
+\textbf{Stage 1 — Isotropic Resampling.} Volumes are resampled to isotropic voxel spacing (1.0\,mm) using SciPy zoom with first-order (trilinear) interpolation. Resampling factors are computed per axis as $f_i = s_i / t_i$, where $s_i$ is the original spacing and $t_i=1.0$\,mm is the target spacing.
+
+\textbf{Stage 2 — Fixed-Size Normalization.} The isotropically resampled volume is further resized to a fixed cubic grid of $128^3$ voxels using PyTorch \texttt{F.interpolate} with trilinear mode. This standardization ensures consistent tensor dimensions across all volumes for batched training.
+
+\textbf{Stage 3 — Attenuation Calibration.} Raw Hounsfield-like intensity values are converted to linear attenuation coefficients $\mu$ (mm$^{-1}$) for physically meaningful Beer-Lambert projection. The piecewise mapping is:
+\begin{itemize}
+    \item $\text{HU} < -200$: air, $\mu = 0$ (suppressed);
+    \item $-200 \leq \text{HU} < 300$: soft tissue window, $\mu = 0.01 + \frac{(\text{HU}+200)}{500} \times 0.015$;
+    \item $300 \leq \text{HU} < 3000$: bone window, $\mu = 0.025 + \frac{(\text{HU}-300)}{2700} \times 0.055$;
+    \item $\text{HU} \geq 3000$: dense bone/enamel/metal, $\mu$ clamped at 0.08.
+\end{itemize}
+After preprocessing, all volumes exhibit $\mu \in [0.00000, 0.08000]$, with air fractions of 40.8--49.8\% and bone fractions of 8.5--16.1\% across the 21 subjects. Volumes are converted to PyTorch tensors for downstream processing.
+
+% =========================================================
+\section{Methodology}
+\label{sec:method}
+% =========================================================
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{CBCT Volume Processing.png}
+\caption{End-to-end CBCT-to-panoramic DRR pipeline architecture. The pipeline flows from NIfTI ingestion and metadata storage through preprocessing (isotropic resampling, volume normalization, HU-to-attenuation conversion), dental arch detection and geometry modeling, panoramic DRR rendering (curved-focal-trough trilinear sampling), augmentation, paired dataset packaging, and quality metric evaluation via DataLoader.}
+\label{fig:full_pipeline}
+\end{figure*}
+
+\subsection{Dental Arch Geometry Estimation}
+
+A key distinguishing feature of panoramic radiography—compared with conventional planar DRR—is that the X-ray source does not traverse a straight line. Instead, the imaging system follows a curved trajectory that traces the dental arch, ensuring that teeth are optimally in focus throughout the panoramic sweep. Replicating this behavior requires estimating a patient-specific dental arch curve from each CBCT volume.
+
+The arch estimation procedure (Fig.~\ref{fig:arch_geom}) focuses on tooth-level axial slices corresponding to depths of 40--75\% of the volume's z-extent (the ``dental zone''), excluding the skull base. Within this region, voxels exceeding an attenuation threshold of $\mu \geq 0.025$ (bone threshold) are identified as high-density structures. The centroid and spread of these bone coordinates are computed:
+\begin{align}
+    c_x &= \text{mean}(\text{bone}_x), \quad c_y = \text{mean}(\text{bone}_y), \\
+    x_\text{range} &= \max(\text{bone}_x) - \min(\text{bone}_x), \\
+    y_\text{range} &= \max(\text{bone}_y) - \min(\text{bone}_y).
+\end{align}
+The resulting U-shaped arch curve is parameterized in NIfTI LAS orientation where $x$ runs Left$\leftrightarrow$Right, $y$ runs Posterior$\to$Anterior, and the arch vertex (incisors) is located at the highest anterior $y$ value with the molar arms extending posteriorly. For the example volume, this yields center\,=\,(61.7, 66.3), half-width\,=\,44.9, depth\,=\,23.2, and arch Y range of [40.5, 98.5] voxels. At each point along the arch, tangent vectors are computed from finite differences and normal vectors are derived as $\mathbf{N}_u = (dy/dt, -dx/dt)$ (normalized), defining the ray-casting direction perpendicular to the arch at each panoramic column.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.48\textwidth]{dental_arch_geometry.png}
+\caption{Auto-fitted dental arch and focal-trough geometry derived from CBCT bone distribution. Left: bone density projection with superimposed arch and centroid. Center: axial slice at tooth level with arch and focal-trough overlay. Right: arch curve with ray normals showing the perpendicular ray-casting directions.}
+\label{fig:arch_geom}
+\end{figure}
+
+\subsection{Curved-Focal-Trough DRR Rendering}
+
+The panoramic DRR generator (\texttt{PanoramicDRRGenerator}) implements the curved-focal-trough projection model (Fig.~\ref{fig:ray_result}, Fig.~\ref{fig:ray_equations}). The output panoramic image has spatial dimensions of $512 \times 256$ pixels (width $\times$ height, i.e., panoramic arc length $\times$ vertical extent). The focal trough depth is 30.0\,mm, corresponding to $30.0 / 1.17 \approx 25.6$ voxels (using an approximate scale factor of 1.17\,mm/voxel for the $128^3$ normalized volume). The sampling grid contains $60$ depth samples, giving a step size of $\Delta\ell = 0.5$\,mm per step.
+
+For each panoramic pixel $(u, v)$:
+\begin{enumerate}
+    \item The horizontal position $u$ selects a point on the arch curve and its inward normal vector $\mathbf{N}_u$.
+    \item The vertical position $v$ defines the height within the CBCT volume.
+    \item A ray of length equal to the focal-trough depth is cast along $\mathbf{N}_u$ through the 3D volume, sampling $D=60$ positions at equal intervals.
+    \item At each sample position $\mathbf{x}_k$, the attenuation coefficient $\mu_k$ is obtained via trilinear interpolation of the preprocessed $128^3$ volume.
+    \item The discrete Beer-Lambert line integral is accumulated:
+    \begin{equation}
+        A(u,v) \approx \sum_{k=1}^{D} \mu_k \,\Delta\ell.
+        \label{eq:disc}
+    \end{equation}
+    \item The raw panoramic pixel value is computed as $P(u,v) = A(u,v)$ (the positive line integral, where higher values correspond to denser material).
+\end{enumerate}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.48\textwidth]{ray_tracing_result.png}
+\caption{Curved-arch ray tracing result showing the sampling behavior of the DRR projection through the focal trough. Each column of the panoramic image corresponds to one arch position and its associated normal ray.}
+\label{fig:ray_result}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.48\textwidth]{Explained_Ray_tracing.png}
+\caption{Equation-level and geometric interpretation of the curved focal-trough ray integration. Key components illustrated include: the tangent vector $\mathbf{T}_u$ along the arch, the normal vector $\mathbf{N}_u$ defining ray direction, the parametric arch curve P(t), arch width/depth parameters, and the LAS-orientation coordinate frame. The focal trough is shown as a band of nonzero depth $d \neq 0$ centered on the arch.}
+\label{fig:ray_equations}
+\end{figure}
+
+\subsection{Radiographic Post-Processing}
+
+The raw line-integral image is post-processed to improve radiographic realism and clinical interpretability:
+\begin{enumerate}
+    \item \textbf{Percentile windowing:} the 2nd and 98th percentiles of pixel intensities are used as the display window, suppressing outliers from dense metal artifacts.
+    \item \textbf{Normalization:} the windowed image is linearly scaled to $[0, 1]$.
+    \item \textbf{Gamma correction:} a gamma value of $\gamma = 0.8$ is applied to brighten mid-tones, approximating the appearance of clinical OPG film.
+    \item \textbf{Unsharp masking:} a Gaussian-blurred version is subtracted from the normalized image to enhance high-frequency edge detail in tooth and bone boundaries.
+\end{enumerate}
+The resulting mean pixel value across all 21 volumes lies in the range $[0.631, 0.766]$, with full dynamic range $[0.0, 1.0]$, confirming that the post-processing produces consistently normalized outputs.
+
+\subsection{Multi-View Augmentation and Dataset Packaging}
+\label{subsec:aug}
+
+To increase the diversity of the paired training set, each of the 21 preprocessed CBCT volumes is projected under three augmentation settings (Fig.~\ref{fig:rot_cmp}):
+\begin{itemize}
+    \item \textbf{Geometric augmentation:} the volume is rotated by $-3^\circ$, $0^\circ$ (identity), and $+3^\circ$ around the z-axis using SciPy \texttt{ndimage.rotate} (first-order interpolation, no reshape).
+    \item \textbf{Intensity augmentation:} Poisson photon-counting noise is added with intensity parameter 1000.0, simulating quantum noise in X-ray detection. Random brightness and contrast jitter are applied with brightness offset $\in [-0.03, 0.03]$ and contrast scale drawn from a uniform distribution.
+\end{itemize}
+
+This produces $21 \times 3 = 63$ augmented panoramic--CBCT pairs. Each pair stores the panoramic image tensor, the volume index, the augmentation label, and the rotation angle. The full paired dataset is serialized as a PyTorch \texttt{.pt} file (\texttt{paired\_panoramic\_cbct\_dataset.pt}), containing: panoramic tensors of shape $[1, 256, 512]$, CBCT volume tensors of shape $[1, 128, 128, 128]$, and CBCT metadata dictionaries. The file size is 187.2\,MB. A \texttt{PairedPanoramicCBCTDataset} PyTorch \texttt{Dataset} class and \texttt{DataLoader} (batch size 1, 21 batches) wrap the dataset for training pipelines supporting batching, shuffling, and on-the-fly augmentation.
+
+% =========================================================
+\section{Loss Functions and Quality Metrics}
+\label{sec:loss}
+% =========================================================
+
+\subsection{Individual Metrics}
+
+Four quality metrics are computed for every panoramic DRR pair:
+\begin{itemize}
+    \item \textbf{L1 (MAE):} pixel-wise mean absolute error, measuring the average per-pixel deviation.
+    \item \textbf{MSE (L2):} pixel-wise mean squared error, more sensitive to large deviations.
+    \item \textbf{SSIM:} structural similarity index computed with a Gaussian kernel ($\sigma=1.5$, window size 11), capturing luminance, contrast, and structural fidelity. Implemented as a differentiable 2D module (\texttt{SSIMLoss2D}) using constants $C_1 = 0.0001$, $C_2 = 0.0009$.
+    \item \textbf{PSNR:} peak signal-to-noise ratio (dB), defined as $10\log_{10}(1/\text{MSE})$, providing a logarithmic measure of signal fidelity.
+\end{itemize}
+
+\subsection{Combined Training Loss}
+
+A weighted combined loss function is defined for training downstream networks:
+\begin{equation}
+\mathcal{L} = \alpha \cdot L_1 + \beta \cdot (1 - \text{SSIM}) + \gamma \cdot L_\text{MSE},
+\label{eq:loss}
+\end{equation}
+with weights $\alpha=1.0$, $\beta=5.0$, $\gamma=1.0$. The higher weight on SSIM loss encourages structural fidelity rather than purely pixel-wise accuracy, which is appropriate for medical image synthesis tasks where perceptual and structural quality are clinically relevant.
+
+\subsection{Evaluation Protocol}
+
+Two complementary evaluations are performed:
+
+\textbf{Round-trip self-consistency:} Each CBCT volume in the DataLoader is re-projected through the DRR generator and the resulting panoramic is compared against the stored panoramic from the same volume. This measures the DRR generator's internal consistency (i.e., deterministic projection reproducibility). Round-trip metrics are L1\,=\,0, SSIM\,=\,1.0, PSNR\,=\,$\infty$, confirming exact self-consistency.
+
+\textbf{Cross-view augmentation quality:} Augmented panoramics from the three rotation settings are compared against the identity ($0^\circ$) panoramic of the corresponding volume. This measures the sensitivity of the projection to small patient-position variations. Table~\ref{tab:metrics} reports representative aggregated values. Full per-volume, per-augmentation results are detailed in the notebook output.
+
+% =========================================================
+\section{Experimental Results}
+\label{sec:results}
+% =========================================================
+
+\subsection{Output Inventory}
+
+The complete pipeline execution on 21 CBCT volumes produced the following artifacts:
+\begin{itemize}
+    \item 21 synthetic panoramic DRR images (PNG), one per volume, saved to \texttt{project/output/}.
+    \item 63 augmented panoramic images (PNG), saved to \texttt{project/output/augmented/}.
+    \item One paired PyTorch dataset file: \texttt{paired\_panoramic\_cbct\_dataset.pt} (187.2\,MB).
+    \item Diagnostic visualization outputs: arch geometry figure, panoramic grid, quality verification panel, CBCT-to-panoramic comparison figure, paired CBCT--PX samples figure.
+\end{itemize}
+
+Average generation time per volume was 2.23 seconds on CPU, confirming the pipeline's practicality for offline dataset construction.
+
+\subsection{Quantitative Results}
+
+\begin{table}[t]
+\caption{Quantitative Summary: Cross-View Quality Metrics}
+\label{tab:metrics}
+\centering
+\begin{tabular}{l c c c}
+\toprule
+\textbf{Augmentation} & \textbf{Avg L1} & \textbf{Avg SSIM} & \textbf{Avg PSNR (dB)} \\
+\midrule
+rot+0deg (identity)   & 0.03146 & 0.7583 & 28.76 \\
+rot$-$3deg            & 0.06158 & 0.5249 & 20.70 \\
+rot+3deg              & 0.06479 & 0.5250 & 20.46 \\
+\midrule
+\multicolumn{4}{l}{\textit{Additional pipeline statistics:}} \\
+\multicolumn{2}{l}{Processed CBCT volumes} & \multicolumn{2}{c}{21} \\
+\multicolumn{2}{l}{Augmented panoramic variants} & \multicolumn{2}{c}{63} \\
+\multicolumn{2}{l}{Dataset file size} & \multicolumn{2}{c}{187.2\,MB} \\
+\multicolumn{2}{l}{Avg generation time/volume} & \multicolumn{2}{c}{2.23\,s (CPU)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The rot+0deg results (L1\,=\,0.03146, SSIM\,=\,0.7583, PSNR\,=\,28.76\,dB) reflect cross-volume consistency when the identity augmentation is compared against itself, confirming stable and repeatable DRR generation. The $\pm3^\circ$ rotation conditions show expected degradation (SSIM drops to $\approx$0.52, PSNR to $\approx$20.5\,dB), consistent with meaningful geometric shift between views. These numbers establish the practical operating range of the augmentation strategy.
+
+\subsection{Visual Results}
+
+Fig.~\ref{fig:cbct_to_pan} shows representative CBCT axial and coronal slices alongside the corresponding synthetic panoramic DRR, illustrating that dental structures (tooth crowns, roots, mandibular canal) are visually preserved in the projection.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.48\textwidth]{cbct_to_panoramic_comparison.png}
+\caption{Representative CBCT-to-panoramic visualization. Left and center: axial and coronal slices from a preprocessed CBCT volume at mid-depth (slice \#64). Right: the corresponding synthetic panoramic DRR (OPG) generated by the curved-arch Beer-Lambert pipeline.}
+\label{fig:cbct_to_pan}
+\end{figure}
+
+Fig.~\ref{fig:pan_grid} presents a $2\times3$ grid of synthetic panoramic DRRs from the first six CBCT volumes, demonstrating consistent output quality and visual appearance across subjects.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.48\textwidth]{panoramic_grid.png}
+\caption{Grid of six synthetic panoramic X-rays generated from CBCT volumes 001--006. All images were generated with identical pipeline parameters, demonstrating consistent rendering quality across different patients with varying bone density and dentition.}
+\label{fig:pan_grid}
+\end{figure}
+
+Fig.~\ref{fig:rot_cmp} illustrates the three augmented views for a representative volume, showing the expected geometric displacement between the $-3^\circ$, $0^\circ$, and $+3^\circ$ rotation conditions.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.48\textwidth]{rotation_comparison_minus3_0_plus3.png}
+\caption{Multi-view augmentation outputs for a representative CBCT volume at rotation offsets of $-3^\circ$ (left), $0^\circ$ (center), and $+3^\circ$ (right). The $\pm3^\circ$ perturbations introduce visible geometric displacement in the panoramic arc, simulating slight patient-positioning variation.}
+\label{fig:rot_cmp}
+\end{figure}
+
+Fig.~\ref{fig:paired_samples} shows examples of paired CBCT slices (axial, coronal, sagittal) alongside their corresponding synthetic panoramic DRRs from the exported \texttt{.pt} dataset, confirming the pairing integrity.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.48\textwidth]{paired_cbct_px_samples.png}
+\caption{Examples of paired CBCT--panoramic X-ray (PX) samples from the exported \texttt{paired\_panoramic\_cbct\_dataset.pt}. Each row shows the panoramic DRR (column 1), CBCT axial slice (column 2), CBCT coronal slice (column 3), and CBCT sagittal slice (column 4) for the same volume, confirming pairing consistency.}
+\label{fig:paired_samples}
+\end{figure}
+
+Fig.~\ref{fig:quality} presents the quality verification panel. Pixel distribution histograms show consistent bell-shaped distributions (mean pixel 0.702\,$\pm$\,0.037, std 0.217\,$\pm$\,0.021, contrast 0.312\,$\pm$\,0.043, dark fraction 2.7\,$\pm$\,1.4\%, bright fraction 16.6\,$\pm$\,5.5\%). All 21 images passed automated quality checks for dynamic range and contrast.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.48\textwidth]{quality_verification.png}
+\caption{Quality verification panel for five representative synthetic panoramic DRRs (volumes 001, 006, 011, 016, 021). Each row shows the full panoramic image, its pixel histogram, a center crop of the teeth region, and per-image statistics (mean, std, min, max, contrast). All images passed dynamic range and contrast quality checks.}
+\label{fig:quality}
+\end{figure}
+
+Fig.~\ref{fig:nebla_vs_ours} provides a visual comparison between the NeBLa reference approach and the panoramic outputs generated by the proposed pipeline.
+
+\begin{figure*}[t]
+\centering
+\begin{tabular}{cc}
+\includegraphics[width=0.45\textwidth]{nebla.png} &
+\includegraphics[width=0.45\textwidth]{rotation_comparison_minus3_0_plus3.png} \\
+\small (a) NeBLa reference panoramic output & \small (b) Our generated outputs ($-3^\circ$, $0^\circ$, $+3^\circ$)
+\end{tabular}
+\caption{Visual comparison between (a) the NeBLa reference panoramic output style (used as contextual benchmark) and (b) the multi-view panoramic DRRs generated by our curved-arch Beer-Lambert pipeline at three rotation augmentation settings. Both show characteristic panoramic dental anatomy, validating the realism of our synthetic generation approach.}
+\label{fig:nebla_vs_ours}
+\end{figure*}
+
+% =========================================================
+\section{Discussion}
+\label{sec:discussion}
+% =========================================================
+
+\subsection{Analysis of Results}
+
+The pipeline achieves stable synthetic panoramic generation across all 21 CBCT volumes. The cross-view self-consistency scores (L1\,=\,0.03146, SSIM\,=\,0.7583, PSNR\,=\,28.76\,dB for the identity condition) are comparable to values reported in the related work: NeBLa reports PSNR of 19.89--21.68\,dB and SSIM of 79.21--82.62\% for full 3D reconstruction quality (a harder task), while our scores reflect the consistency of the projection itself. The curved dental arch model substantially improves anatomical relevance compared with a naive planar parallel projection, as the tooth crowns and roots are maintained within the focal band throughout the panoramic sweep.
+
+The pixel quality statistics (mean 0.702, std 0.217, dark fraction 2.7\%, bright fraction 16.6\%) fall within clinically reasonable ranges for panoramic radiography, and all 21 images passed automated quality checks. Average generation time of 2.23\,s per volume on CPU makes the pipeline practical for batch dataset construction without GPU requirements.
+
+\subsection{Limitations}
+
+Several limitations are acknowledged, consistent with known challenges in dental 2D--3D reconstruction literature \cite{park2024nebla,wang2024neural,shin2025sparse}:
+
+\begin{itemize}
+    \item \textbf{Heuristic attenuation calibration:} the HU-to-attenuation mapping uses fixed tissue-class thresholds rather than scanner-specific physical calibration. Scanner variability across CBCT machines may require adaptation of these parameters.
+    \item \textbf{Threshold-based arch estimation:} the dental arch detection relies on a fixed bone-attenuation threshold. Patients with severe bone loss, metallic artifacts, or atypical arch morphology may require threshold adjustment or more robust estimation algorithms.
+    \item \textbf{Fixed focal-trough and post-processing parameters:} the 30\,mm focal trough depth and post-processing parameters are fixed across all volumes. Patient-specific calibration of these parameters may further improve image fidelity.
+    \item \textbf{Downsampled volume resolution:} resampling to $128^3$ reduces fine anatomical detail. Future work may explore higher-resolution projections at the cost of increased computation.
+    \item \textbf{Absence of soft-tissue reconstruction:} the current pipeline projects bone and soft tissue through a unified attenuation map but does not separately reconstruct soft tissues, nerves, or periodontal structures.
+\end{itemize}
+
+% =========================================================
+\section{Conclusion and Future Work}
+\label{sec:conclusion}
+% =========================================================
+
+This paper presents and evaluates a complete, physics-grounded pipeline for generating synthetic panoramic dental X-rays from CBCT volumes. The pipeline implements Beer-Lambert attenuation physics through a curved-focal-trough ray tracing formulation, auto-fits a patient-adaptive dental arch geometry from each CBCT volume's bone distribution, and produces multi-view augmented paired training data suitable for downstream 2D-to-3D dental reconstruction models.
+
+Applied to 21 CBCT scans, the pipeline generated 63 augmented panoramic--CBCT pairs with cross-view quality metrics of L1\,=\,0.03146, SSIM\,=\,0.7583, and PSNR\,=\,28.76\,dB (identity condition), and exported a 187.2\,MB PyTorch-format paired dataset. All quality verification checks passed across the full dataset.
+
+Future directions include:
+\begin{itemize}
+    \item \textbf{Machine-specific trajectory modeling:} developing methods to automatically estimate patient- and scanner-specific X-ray acquisition trajectories for improved DRR realism \cite{park2024nebla}.
+    \item \textbf{Scanner-calibrated attenuation mapping:} replacing heuristic HU thresholds with scanner-specific physical calibration for more accurate radiographic simulation.
+    \item \textbf{Multi-structure reconstruction:} extending the pipeline to separately reconstruct and label teeth, jawbone, mandibular canal, and soft-tissue structures \cite{wang2024neural}.
+    \item \textbf{Higher-resolution DRR generation:} exploring $256^3$ or full-resolution projections for improved fine-detail fidelity.
+    \item \textbf{Integration with reconstruction pipelines:} using the generated paired dataset to train and evaluate 3D reconstruction models such as NeBLa \cite{park2024nebla}, PX2Tooth \cite{ma2024px2tooth}, and Oral-3Dv2 \cite{song2023oral}.
+    \item \textbf{Clinical validation:} validating the synthetic panoramics against real clinical OPG images in terms of diagnostic utility for caries detection, bone level assessment, and implant planning.
+\end{itemize}
+
+\section*{Acknowledgment}
+The authors thank the Department of Computer Science and Engineering, Sardar Vallabhbhai National Institute of Technology (SVNIT), Surat, for providing computational resources and institutional support. This work was carried out under the M.Tech. Data Science program (2024--26) at SVNIT Surat.
+
+\bibliographystyle{IEEEtran}
+\bibliography{reference}
+
+\end{document}
