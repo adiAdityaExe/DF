@@ -8,6 +8,7 @@ dependencies = [
     "matplotlib>=3.10.8",
     "nibabel>=5.3.3",
     "numpy>=2.4.2",
+    "openai>=2.24.0",
     "pillow>=12.1.1",
     "scipy>=1.17.1",
     "tensorboard>=2.20.0",
