@@ -1,0 +1,848 @@
+data to prepare reference.bib, bibtex and abstract of each paper 
+
+0:
+@inproceedings{song2021oral,
+  title={Oral-3d: Reconstructing the 3d structure of oral cavity from panoramic x-ray},
+  author={Song, Weinan and Liang, Yuan and Yang, Jiawei and Wang, Kun and He, Lei},
+  booktitle={Proceedings of the AAAI conference on artificial intelligence},
+  volume={35},
+  number={1},
+  pages={566--573},
+  year={2021}
+}
+
+Panoramic X-ray (PX) provides a 2D picture of the patient’s
+mouth in a panoramic view to help dentists observe the invisible
+disease inside the gum. However, it provides limited
+2D information compared with cone-beam computed tomography
+(CBCT), another dental imaging method that generates
+a 3D picture of the oral cavity but with more radiation
+dose and a higher price. Consequently, it is of great interest
+to reconstruct the 3D structure from a 2D X-ray image, which
+can greatly explore the application of X-ray imaging in dental
+surgeries. In this paper, we propose a framework, named
+Oral-3D, to reconstruct the 3D oral cavity from a single PX
+image and prior information of the dental arch. Specifically,
+we first train a generative model to learn the cross-dimension
+transformation from 2D to 3D. Then we restore the shape of
+the oral cavity with a deformation module with the dental arch
+curve, which can be obtained simply by taking a photo of
+the patient’s mouth. To be noted, Oral-3D can restore both
+the density of bony tissues and the curved mandible surface.
+Experimental results show that Oral-3D can efficiently and
+effectively reconstruct the 3D oral structure and show critical
+information in clinical applications, e.g., tooth pulling and
+dental implants. To the best of our knowledge, we are the first
+to explore this domain transformation problem between these
+two imaging methods.
+
+1:
+cite bibtex
+@inproceedings{park2024nebla,
+  title={NeBLa: Neural beer-lambert for 3D reconstruction of oral structures from panoramic radiographs},
+  author={Park, Sihwa and Kim, Seongjun and Kwon, Doeyoung and Jang, Yohan and Song, In-Seok and Baek, Seung Jun},
+  booktitle={Proceedings of the AAAI Conference on Artificial Intelligence},
+  volume={38},
+  number={5},
+  pages={4433--4441},
+  year={2024}
+}
+
+Abstract of the paper
+Panoramic radiography (Panoramic X-ray, PX) is a widely used imaging modality for dental examination. However, PX only provides a flattened 2D image, lacking in a 3D view of the oral structure. In this paper, we propose NeBLa (Neural Beer-Lambert) to estimate 3D oral structures from real-world PX. NeBLa tackles full 3D reconstruction for varying subjects (patients) where each reconstruction is based only on a single panoramic image. We create an intermediate representation called simulated PX (SimPX) from 3D Cone-beam computed tomography (CBCT) data based on the Beer-Lambert law of X-ray rendering and rotational principles of PX imaging. SimPX aims at not only truthfully simulating PX, but also facilitates the reverting process back to 3D data. We propose a novel neural model based on ray tracing which exploits both global and local input features to convert SimPX to 3D output. At inference, a real PX image is translated to a SimPX-style image with semantic regularization, and the translated image is processed by generation module to produce high-quality outputs. Experiments show that NeBLa outperforms prior state-of-the-art in reconstruction tasks both quantitatively and qualitatively. Unlike prior methods, NeBLa does not require any prior information such as the shape of dental arches, nor the matched PX-CBCT dataset for training, which is difficult to obtain in clinical practice. Our code is available at https://github.com/sihwa-park/nebla.
+
+2:
+@article{parida2025vit,
+  title={ViT-NeBLa: A Hybrid Vision Transformer and Neural Beer--Lambert Framework for Single-View 3D Reconstruction of Oral Anatomy from Panoramic Radiographs},
+  author={Parida, Bikram Keshari and Sunilkumar, Anusree P and Sen, Abhijit and You, Wonsang},
+  journal={IEEE Access},
+  year={2025},
+  publisher={IEEE}
+}
+
+Panoramic radiography (PX) is widely used in dentistry but provides only a flattened 2D view; Cone Beam Computed Tomography CT (CBCT) recovers 3D anatomy at higher dose and cost. We tackle full 3D reconstruction from a single real-world PX for varying patients. We propose ViT–NeBLa (Vision-Transformer Neural Beer–Lambert), a physics-guided framework that estimates a continuous 3D dentoalveolar density field directly from single PX. The design mirrors panoramic acquisition while simplifying the inverse problem: we parameterize projection-ray directions by tangency to a patient-adaptive elliptical path and independently restrict sampling to a jaw-focused horseshoe (focal trough) in which the projection rays do not intersect. This removes the intermediate density-aggregation step used by overlapping-ray methods and reduces per-ray samples by about 52%, lowering memory and compute. A hybrid ViT–CNN backbone extracts global anatomical context and local texture from the PX, and a learnable multi-resolution hash positional encoding maps 3D sample coordinates to expressive features that preserve fine dental and osseous detail. Per-point densities are predicted by a compact MLP and accumulated into a coarse 3D grid, which a lightweight 3D U-Net refines into the final volume. Training is end-to-end using synthetic PX rendered from CBCT via the Beer–Lambert law together with voxelwise, projection-consistency, and perceptual losses; at inference, a single PX is processed directly—without CBCT flattening or dental-arch priors. Experiments show that ViT–NeBLa outperforms contemporary PX-to-3D baselines both quantitatively and qualitatively, yielding sharper cortical boundaries, clearer trabecular patterns, and fewer artifacts. In sum, ViT–NeBLa provides a radiation-efficient route to clinically informative 3D visualization from routine panoramic radiographs while simplifying geometry, reducing sampling, and preserving high-frequency structure.
+
+3:
+@inproceedings{anusree2023deep,
+  title={A deep learning approach to generating flattened CBCT volume across dental arch from 2D panoramic X-ray for 3D oral cavity reconstruction},
+  author={Anusree, PS and You, Wonsang},
+  booktitle={2023 International Technical Conference on Circuits/Systems, Computers, and Communications (ITC-CSCC)},
+  pages={1--6},
+  year={2023},
+  organization={IEEE}
+}
+
+Panoramic radiography is the most popular imaging modality in dentistry. On the other hand, cone-beam computed tomography (CBCT) is usually utilized to review three-dimensional dental structures in high resolution, however, it is less utilized in dental clinics due to its high cost and radiation exposure. An automated method for reconstructing 3D oral cavity structure from panoramic X-ray will be beneficial for patients to reduce expenses for dental care without radiation exposure. As an initial step to the 3D shape reconstruction of the oral cavity, a flattened CBCT 3D volume across the dental arch can be generated from a 2D panoramic X-ray image using a deep learning method. Existing deep learning models are almost based on the encoder-decoder architecture, but their performance has not been well elucidated. In this paper, we evaluated the applicability of attention U-net for reconstructing the flattened CBCT 3D volume from a panoramic X-ray. In our quantitative and qualitative evaluations, the attention U-net outperformed the auto-encoder and led to enhanced perceptual quality.
+
+4:
+@article{sunilkumar2025panoramic,
+  title={Panoramic X-ray Synthesis from Dental CBCT Using Patient-tailored Simulated Geometry with Uniform Projection Sampling},
+  author={Sunilkumar, Anusree P and Parida, Bikram Keshari and Moon, Seong-Yong and You, Wonsang},
+  journal={IEEE Access},
+  year={2025},
+  publisher={IEEE}
+}
+
+Panoramic X-ray (PX) is the most widely used imaging modality in dental health care. However, PXs can be severely degraded due to artifacts such as ghostly shadows, distortions, and superimposition of adjacent structures. Panoramic tomosynthesis from cone-beam computed tomography (CBCT) can be considered an alternative to noisy PX. Traditional cylinder-based methods take orthogonal projections along an appropriate dental arch; however, they suffer from a significant discrepancy between synthesized and genuine PXs, making them less applicable for clinical purposes. Recently, another approach based on simulated geometry that emulates the X-ray source-detector movement of PX scanners for ray tracing has been proposed. However, their methods suffer from poorly fitted ray trajectories for individual patients, uneven ray tracing, image misalignment, and, in some cases, the need for prior information on scan parameters. To tackle those problems, we propose a robust method of synthesizing PXs from CBCT by defining a universally applicable simulated geometry of the ray trajectory. Our method adjusts the ray trajectory to be optimal for a patient’s jaw shape and also achieves uniform ray sampling throughout the patient’s jaw by progressively increasing ray sampling intervals. In addition, tilt correction was applied to alleviate potential errors caused by incorrect patient positioning. Quantitative and qualitative results show that our method outperforms prior simulated geometry (SG)-based methods as well as image processing methods. Our framework can synthesize realistic PX images from dental CBCT by employing efficient ray tracing strategies customized to the patient’s oral structure without the need for scan parameters and ultimately empower dentists’ diagnostic capabilities.
+
+5:
+@article{sunilkumar2024recent,
+  title={Recent advances in dental panoramic X-ray synthesis and its clinical applications},
+  author={Sunilkumar, Anusree P and Parida, Bikram Keshari and You, Wonsang},
+  journal={IEEE Access},
+  volume={12},
+  pages={141032--141051},
+  year={2024},
+  publisher={IEEE}
+}
+
+X-ray imaging plays a pivotal role in clinical diagnostics by facilitating tasks ranging from organ segmentation to disease detection. With the integration of artificial intelligence (AI), the capabilities of X-ray analysis have been greatly enhanced. However, acquiring a comprehensive dataset for training AI models remains challenging due to various factors including patient privacy, radiation exposure, and cost constraints. To overcome this hurdle, researchers have turned to create synthetic X-ray datasets. In dental imaging, the synthesis of Panoramic X-rays (PXs) poses unique challenges owing to the intricate nature of the oral cavity and the inherent diversity among patients. Existing efforts predominantly rely on Cone Beam Computed Tomography (CBCT) or phantoms for such tasks. Synthesizing PX can be beneficial when the PX imaging cannot be performed immediately or when dentists need to find a one-to-one correspondence between PX and CBCT. This review paper comprehensively examines the methodologies employed for synthesizing dental PXs, specifically, automated synthesis, elucidating the methods utilized and the associated advantages, limitations, and potential clinical applications in routine practice. By shedding light on these approaches, this review aims to provide valuable insights for researchers and practitioners in the dental imaging domain.
+
+6:
+@article{wang2024neural,
+  title={Neural radiance fields in medical imaging: A survey},
+  author={Wang, Xin and Chen, Yineng and Hu, Shu and Fan, Heng and Zhu, Hongtu and Li, Xin},
+  journal={arXiv preprint arXiv:2402.17797},
+  year={2024}
+}
+
+Neural Radiance Fields (NeRF), as a pioneering technique in computer vision, offer great potential to revolutionize medical imaging by synthesizing three-dimensional representations from the projected two-dimensional image data. However, they face unique challenges when applied to medical applications. This paper presents a comprehensive examination of applications of NeRFs in medical imaging, highlighting four imminent challenges, including fundamental imaging principles, inner structure requirement, object boundary definition, and color density significance. We discuss current methods on different organs and discuss related limitations. We also review several datasets and evaluation metrics and propose several promising directions for future research.
+
+7:
+@inproceedings{lin2023learning,
+  title={Learning deep intensity field for extremely sparse-view cbct reconstruction},
+  author={Lin, Yiqun and Luo, Zhongjin and Zhao, Wei and Li, Xiaomeng},
+  booktitle={International Conference on Medical Image Computing and Computer-Assisted Intervention},
+  pages={13--23},
+  year={2023},
+  organization={Springer}
+}
+
+Sparse-view cone-beam CT (CBCT) reconstruction is an important direction to reduce radiation dose and benefit clinical applications. Previous voxel-based generation methods represent the CT as discrete voxels, resulting in high memory requirements and limited spatial resolution due to the use of 3D decoders. In this paper, we formulate the CT volume as a continuous intensity field and develop a novel DIF-Net to perform high-quality CBCT reconstruction from extremely sparse (
+10) projection views at an ultrafast speed. The intensity field of a CT can be regarded as a continuous function of 3D spatial points. Therefore, the reconstruction can be reformulated as regressing the intensity value of an arbitrary 3D point from given sparse projections. Specifically, for a point, DIF-Net extracts its view-specific features from different 2D projection views. These features are subsequently aggregated by a fusion module for intensity estimation. Notably, thousands of points can be processed in parallel to improve efficiency during training and testing. In practice, we collect a knee CBCT dataset to train and evaluate DIF-Net. Extensive experiments show that our approach can reconstruct CBCT with high image quality and high spatial resolution from extremely sparse views within 1.6 s, significantly outperforming state-of-the-art methods. Our code will be available at https://github.com/xmed-lab/DIF-Net.
+
+8:
+@article{xie2025time,
+  title={Time-resolved dynamic CBCT reconstruction using prior-model-free spatiotemporal Gaussian representation (PMF-STGR)},
+  author={Xie, Jiacheng and Shao, Hua-Chieh and Zhang, You},
+  journal={Physics in Medicine \& Biology},
+  volume={70},
+  number={16},
+  pages={165011},
+  year={2025},
+  publisher={IOP Publishing}
+}
+
+Objective. Time-resolved CBCT imaging, which reconstructs a dynamic sequence of CBCTs
+reflecting intra-scan motion (one CBCT per x-ray projection without phase sorting/binning), is
+highly desired for regular/irregular motion characterization, patient setup, and motion-adapted
+radiotherapy. Representing patient anatomy and associated motion fields as 3D Gaussians, we
+developed a Gaussian representation-based framework (PMF-STGR) for fast and accurate dynamic
+CBCT reconstruction. Approach. PMF-STGR comprises three major components: a dense set of 3D
+Gaussians to reconstruct a reference-frame CBCT for the dynamic sequence; another 3D Gaussian
+set to capture three-level, coarse-to-fine motion-basis-components (MBCs) to model the
+intra-scan motion; and a CNN-based motion encoder to solve projection-specific temporal
+coefficients for the MBCs. Scaled by the temporal coefficients, the learned MBCs will be combined
+into deformation vector fields to deform the reference CBCT into projection-specific,
+time-resolved CBCTs to capture the dynamic motion. Due to the strong representation power of
+3D Gaussians, PMF-STGR can reconstruct dynamic CBCTs in a ‘one-shot’ training fashion from a
+standard 3D CBCT scan, without using any prior anatomical/motion model. Main results. We
+evaluated PMF-STGR using XCAT phantom simulations and real patient full/half-fan scans.
+Metrics, including the image relative error (RE), structural-similarity-index-measure (SSIM),
+tumor center-of-mass-error (COME), and landmark localization error (LE), were used to evaluate
+the accuracy of solved dynamic CBCTs and motion. PMF-STGR shows clear advantages over a
+state-of-the-art, implicit neural representation (INR)-based approach, PMF-STINR. Compared
+with PMF-STINR, PMF-STGR reduces reconstruction time by ∼50% while reconstructing less
+blurred images with comparable/better motion accuracy. For XCAT, the mean(±s.d.) RE, SSIM,
+and COME were 0.128(0.009), 0.990(0.002), and 0.71 mm(0.40 mm) for PMF-STGR, compared
+with 0.149(0.016), 0.944(0.006), and 0.94 mm(0.18 mm) for PMF-STINR. For patients, the
+mean(±s.d.) landmark LE was 1.40 mm(0.34 mm) for PMF-STGR, and 1.54 mm(0.35 mm) for
+PMF-STINR. Significance. With improved efficiency/accuracy, PMF-STGR enhances the
+applicability of dynamic CBCT imaging for potential clinical translation.
+
+9:
+@article{yang2025trans,
+  title={Trans $$\{$\^{} 2$\}$ $-CBCT: A Dual-Transformer Framework for Sparse-View CBCT Reconstruction},
+  author={Yang, Minmin and Ren, Huantao and Velipasalar, Senem},
+  journal={arXiv preprint arXiv:2506.17425},
+  year={2025}
+}
+
+Abstract—Cone-beam computed tomography (CBCT) using
+only a handful of X-ray projection views offers the potential for
+significantly reduced radiation dose and faster scans. However,
+such extreme angular under-sampling, typically limited to six to
+ten views, introduces severe streak artifacts and results in large
+gaps in spatial coverage. These limitations significantly hinder
+both the extraction of reliable 2D features and the reconstruction
+of a coherent, artifact-suppressed 3D volume from sparse projections.
+In this work, we address these challenges within a unified
+framework. First, we replace conventional UNet/ResNet encoders
+with TransUNet, a hybrid CNN–Transformer architecture originally
+designed for medical image segmentation. The convolution
+layers capture fine-grained local details, while the self-attention
+layers provide long-range contextual understanding. We adapt
+TransUNet to CBCT by concatenating multi-scale feature maps,
+querying view-specific features for each 3D point, and introducing
+a lightweight attenuation-prediction head. This design yields our
+first model, Trans-CBCT, which outperforms the best baseline by
+1.17 dB in PSNR and 0.0163 in SSIM on LUNA16 dataset with six
+projection views. Second, we incorporate a neighbor-aware Point
+Transformer equipped to further enforce volumetric coherence.
+This module employs explicit 3D positional encodings and a
+Neighbor-Aware Attention module that aggregates information
+from each point’s k nearest spatial neighbors, improving local
+consistency and spatial smoothness. The resulting model, named
+Trans2-CBCT, achieves an additional improvement of 0.63 dB
+in PSNR and 0.0117 in SSIM over Trans-CBCT under the
+same six-view setting. Extensive experiments on LUNA16 and
+ToothFairy datasets, with projection numbers ranging from
+six to ten, demonstrate that Trans-CBCT and Trans2-CBCT
+consistently outperform all prior methods in term of both PSNR
+and SSIM. These results highlight the effectiveness of combining
+hybrid CNN–Transformer features with geometry-aware pointbased
+reasoning for sparse-view CBCT reconstruction.
+
+10:
+@article{oliveira2025digital,
+  title={Digital Dental Radiology and Diagnostics—From 2D to 3D},
+  author={Oliveira, Matheus L},
+  journal={Australian Dental Journal},
+  volume={70},
+  pages={S50--S66},
+  year={2025},
+  publisher={Wiley Online Library}
+}
+
+Digital dental radiology has evolved significantly from traditional two-dimensional
+(2D) imaging to advanced three-dimensional
+(3D) modalities such as cone-beam
+computed tomography (CBCT). This progression has overcome many limitations of 2D imaging,
+including superimposition and distortion, enabling more accurate visualisation of complex anatomical structures. Despite
+CBCT's higher radiation dose compared to 2D imaging, ongoing advances in low-dose
+protocols and artefact reduction algorithms
+have expanded its clinical applications. Integration with digital tools such as intraoral scanners and CAD/CAM systems
+has further enhanced its utility in guided implant surgery, orthodontic appliance design, and forensic dentistry. Emerging artificial
+intelligence technologies promise to improve image analysis, diagnostic accuracy, and workflow efficiency. Emphasising
+radiation safety and careful imaging selection remains essential. Additionally, magnetic resonance imaging and ultrasound
+are gaining attention as non-ionising
+imaging alternatives, offering valuable soft tissue assessment complementary to CBCT's
+strengths in hard tissue evaluation. Together, these innovations reflect the crucial change in dental diagnostics from 2D to 3D
+imaging, advancing patient care through improved accuracy and comprehensive treatment planning.
+
+11:
+@article{zhang2023novel,
+  title={A novel reconstruction of the sparse-view CBCT algorithm for correcting artifacts and reducing noise},
+  author={Zhang, Jie and He, Bing and Yang, Zhengwei and Kang, Weijie},
+  journal={Mathematics},
+  volume={11},
+  number={9},
+  pages={2127},
+  year={2023},
+  publisher={MDPI}
+}
+
+Abstract: X-ray tomography is often affected by noise and artifacts during the reconstruction process,
+such as detector offset, calibration errors, metal artifacts, etc. Conventional algorithms, including
+FDK and SART, are unable to satisfy the sampling theorem requirements for 3D reconstruction
+under sparse-view constraints, exacerbating the impact of noise and artifacts. This paper proposes a
+novel 3D reconstruction algorithm tailored to sparse-view cone-beam computed tomography (CBCT).
+Drawing upon compressed sensing theory, we incorporate the weighted Schatten p-norm minimization
+(WSNM) algorithm for 2D image denoising and the adaptive steepest descent projection onto
+convex sets (ASD-POCS) algorithm, which employs a total variation (TV) regularization term. These
+inclusions serve to reduce noise and ameliorate artifacts. Our proposed algorithm extends the WSNM
+approach into three-dimensional space and integrates the ASD-POCS algorithm, enabling 3D reconstruction
+with digital brain phantoms, clinical medical data, and real projections from our portable
+CBCT system. The performance of our algorithm surpasses traditional methods when evaluated
+using root mean square error (RMSE), peak signal-to-noise ratio (PSNR), and structural similarity
+index measure (SSIM) metrics. Furthermore, our approach demonstrates marked enhancements in
+artifact reduction and noise suppression.
+
+12:
+@article{mohamed20253d,
+  title={3D reconstruction from 2D multi-view dental 2D images based on EfficientNetB0 model},
+  author={Mohamed, Waleed and Nader, Nermeen and Alsakar, Yasmin M and Elazab, Naira and Ezzat, Mohamed and Elmogy, Mohammed},
+  journal={Scientific Reports},
+  volume={15},
+  number={1},
+  pages={28775},
+  year={2025},
+  publisher={Nature Publishing Group UK London}
+}
+
+Dental diseases are the primary cause of oral health concerns around the world, affecting millions of
+people. Therefore, recent developments in imaging technologies have transformed the detection and
+treatment of oral problems. Applying three-dimensional (3D) reconstruction from two-dimensional
+(2D) dental images, such as X-rays, is a potential development field. 3D reconstruction technology
+converts real-world goals into mathematical models that are compatible with computer logic
+expressions. It’s been commonly used in dentistry. Particularly for patients with a vomiting reflex,
+3D imaging techniques minimize patient discomfort and shorten the length of the examination or
+treatment. Therefore, this research paper proposes a new 3D reconstruction model from 2D multiview
+dental images. The proposed framework consists of three stages. The first stage is the encoder
+stage, which extracts meaningful features from the 2D images. The second stage captures spatial and
+semantic information essential for the reconstruction task. The third stage is recurrence, which uses 3D
+long short-term memory (LSTM). It ensures that the information from various viewpoints is effectively
+integrated to produce a coherent representation of the 3D structure and decoder stage to translate
+the aggregated features from the LSTM into a fully reconstructed 3D model. When the proposed
+model was tested on the ShapeNet dataset, the suggested model achieved a maximum intersection
+over union (IoU) of 89.98% and an F1_score of 94.11%. A special case of 3D reconstruction, a dental
+dataset, has been created with the same structure as the ShapeNet dataset to evaluate our system.
+The proposed approach’s results show promising accomplishments compared to many state-of-the-art
+approaches, and they motivate the authors to make plans for further improvement.
+
+13:
+@inproceedings{lin2024c,
+  title={C\^{} 2rv: Cross-regional and cross-view learning for sparse-view cbct reconstruction},
+  author={Lin, Yiqun and Yang, Jiewen and Wang, Hualiang and Ding, Xinpeng and Zhao, Wei and Li, Xiaomeng},
+  booktitle={Proceedings of the IEEE/CVF conference on computer vision and pattern recognition},
+  pages={11205--11214},
+  year={2024}
+}
+
+Cone beam computed tomography (CBCT) is an important
+imaging technology widely used in medical scenarios,
+such as diagnosis and preoperative planning.
+Using fewer projection views to reconstruct CT, also
+known as sparse-view reconstruction, can reduce ionizing
+radiation and further benefit interventional radiology.
+Compared with sparse-view reconstruction for traditional
+parallel/fan-beam CT, CBCT reconstruction is more
+challenging due to the increased dimensionality caused
+by the measurement process based on cone-shaped X-ray
+beams. As a 2D-to-3D reconstruction problem, although
+implicit neural representations have been introduced to
+enable efficient training, only local features are considered
+and different views are processed equally in previous
+works, resulting in spatial inconsistency and poor
+performance on complicated anatomies. To this end,
+we propose C2RV by leveraging explicit multi-scale volumetric
+representations to enable cross-regional learning
+in the 3D space. Additionally, the scale-view crossattention
+module is introduced to adaptively aggregate
+multi-scale and multi-view features. Extensive experiments
+demonstrate that our C2RV achieves consistent and significant
+improvement over previous state-of-the-art methods
+on datasets with diverse anatomy. Code is available at
+https://github.com/xmed-lab/C2RV-CBCT.
+
+14:
+@article{liu2024geometry,
+  title={Geometry-aware attenuation learning for sparse-view CBCT reconstruction},
+  author={Liu, Zhentao and Fang, Yu and Li, Changjian and Wu, Han and Liu, Yuan and Shen, Dinggang and Cui, Zhiming},
+  journal={IEEE Transactions on Medical Imaging},
+  volume={44},
+  number={2},
+  pages={1083--1097},
+  year={2024},
+  publisher={IEEE}
+}
+
+Abstract—Cone Beam Computed Tomography (CBCT)
+plays a vital role in clinical imaging. Traditional methods
+typically require hundreds of 2D X-ray projections to reconstruct
+a high-quality 3D CBCT image, leading to considerable
+radiation exposure. This has led to a growing interest
+in sparse-view CBCT reconstruction to reduce radiation
+doses. While recent advances, including deep learning and
+neural rendering algorithms, have made strides in this area,
+these methods either produce unsatisfactory results or
+suffer from time inefficiency of individual optimization. In
+this paper, we introduce a novel geometry-aware encoderdecoder
+framework to solve this problem. Our framework
+starts by encoding multi-view 2D features from various
+2D X-ray projections with a 2D CNN encoder. Leveraging
+the geometry of CBCT scanning, it then back-projects the
+multi-view 2D features into the 3D space to formulate a
+comprehensive volumetric feature map, followed by a 3D
+CNN decoder to recover 3D CBCT image. Importantly, our
+approach respects the geometric relationship between 3D
+CBCT image and its 2D X-ray projections during feature
+back projection stage, and enjoys the prior knowledge
+learned from the data population. This ensures its adaptability
+in dealing with extremely sparse view inputs without
+individual training, such as scenarios with only 5 or 10
+X-ray projections. Extensive evaluations on two simulated
+datasets and one real-world dataset demonstrate exceptional
+reconstruction quality and time efficiency of our
+method.
+
+15:
+@article{maken20232d,
+  title={2D-to-3D: a review for computational 3D image reconstruction from X-ray images},
+  author={Maken, Payal and Gupta, Abhishek},
+  journal={Archives of Computational Methods in Engineering},
+  volume={30},
+  number={1},
+  pages={85--114},
+  year={2023},
+  publisher={Springer}
+}
+
+In the clinical research, three-dimensional/volumetric anatomical structure of the human body is very significant for diagnosis,
+computer-aided surgery, surgical planning, patient follow-up, and biomechanical applications. Medical imaging procedures
+including MRI (Magnetic Resonance Imaging), CT (Computed Tomography), and CBCT (Cone-beam computed
+tomography) have certain drawbacks such as radiation exposure, availability, and cost. As a result, 3D reconstruction from
+2D X-ray images is an alternative way of achieving 3D models with significantly low radiation exposure to the patient. The
+purpose of this study is to provide a comprehensive view of 3D image reconstruction methods using X-ray images, and their
+applicability in the various anatomical sections of the human body. This study provides a critical analysis of the computational
+methods, requirements and steps for 3D reconstruction. This work includes a comparative critical analysis of the
+state-of-the-art approaches including the feature selection along with their benefits and drawbacks. This review motivates the
+researchers to work for 3D reconstruction using X-ray images as only a limited work is available in the area. It may provide a
+solution for many experts who are looking for techniques to reconstruct 3D models from X-ray images for clinical purposes.
+
+16:
+@article{momeni2024differentiable,
+  title={Differentiable voxel-based x-ray rendering improves sparse-view 3d cbct reconstruction},
+  author={Momeni, Mohammadhossein and Gopalakrishnan, Vivek and Dey, Neel and Golland, Polina and Frisken, Sarah},
+  journal={arXiv preprint arXiv:2411.19224},
+  year={2024}
+}
+
+We present DiffVox, a self-supervised framework for Cone-Beam Computed Tomography
+(CBCT) reconstruction by directly optimizing a voxelgrid representation
+using physics-based differentiable X-ray rendering. Further, we investigate how
+the different implementations of the X-ray image formation model in the renderer
+affect the quality of 3D reconstruction and novel view synthesis. When combined
+with our regularized voxel-based learning framework, we find that using an exact
+implementation of the discrete Beer-Lambert law for X-ray attenuation in the renderer
+outperforms both widely used iterative CBCT reconstruction algorithms and
+modern neural field approaches, particularly when given only a few input views.
+As a result, we reconstruct high-fidelity 3D CBCT volumes from fewer X-rays,
+potentially reducing ionizing radiation exposure and improving diagnostic utility.
+
+17:
+@article{lin2026deepsparse,
+  title={Deepsparse: A foundation model for sparse-view cbct reconstruction},
+  author={Lin, Yiqun and Chen, Jixiang and Wang, Hualiang and Yang, Jiewen and Guo, Jiarong and Zhang, Yi and Li, Xiaomeng},
+  journal={IEEE Transactions on Medical Imaging},
+  year={2026},
+  publisher={IEEE}
+}
+
+Cone-beam computed tomography (CBCT) is a critical
+3D imaging technology in the medical field, while the
+high radiation exposure required for high-quality imaging
+raises significant concerns, particularly for vulnerable
+populations. Sparse-view reconstruction reduces radiation
+by using fewer X-ray projections while maintaining
+image quality, yet existing methods face challenges such as
+high computational demands and poor generalizability to
+different datasets. To overcome these limitations, we propose
+DeepSparse, the first foundation model for sparse-view
+CBCT reconstruction, featuring DiCE (Dual-Dimensional
+Cross-Scale Embedding), a novel network that integrates
+multi-view 2D features and multi-scale 3D features. Additionally,
+we introduce the HyViP (Hybrid View Sampling
+Pretraining) framework, which pretrains the model on large
+datasets with both sparse-view and dense-view projections,
+and a two-step finetuning strategy to adapt and refine the
+model for new datasets. Extensive experiments and ablation
+studies demonstrate that our proposed DeepSparse
+achieves superior reconstruction quality compared to stateof-
+the-art methods, paving the way for safer and more efficient
+CBCT imaging. The code will be publicly available at
+https://github.com/xmed-lab/DeepSparse.
+
+18:
+@article{song2023oral,
+  title={Oral-3Dv2: 3D oral reconstruction from panoramic X-ray imaging with implicit neural representation},
+  author={Song, Weinan and Zheng, Haoxin and Tu, Dezhan and Liang, Chengwen and He, Lei},
+  journal={arXiv preprint arXiv:2303.12123},
+  year={2023}
+}
+
+3D reconstruction of medical imaging from 2D images has
+become an increasingly interesting topic with the development
+of deep learning models in recent years. Previous studies
+in 3D reconstruction from limited X-ray images mainly
+rely on learning from paired 2D and 3D images, where the
+reconstruction quality relies on the scale and variation of collected
+data. This has brought significant challenges in the collection
+of training data, as only a tiny fraction of patients take
+two types of radiation examinations in the same period. Although
+simulation from higher-dimension images could solve
+this problem, the variance between real and simulated data
+could bring great uncertainty at the same time. In oral reconstruction,
+the situation becomes more challenging as only
+a single panoramic X-ray image is available, where models
+need to infer the curved shape by prior individual knowledge.
+To overcome these limitations, we propose Oral-3Dv2
+to solve this cross-dimension translation problem in dental
+healthcare by learning solely on projection information, i.e.,
+the projection image and trajectory of the X-ray tube. Our
+model learns to represent the 3D oral structure in an implicit
+way by mapping 2D coordinates into density values of voxels
+in the 3D space. To improve efficiency and effectiveness,
+we utilize a multi-head model that predicts a bunch of voxel
+values in 3D space simultaneously from a 2D coordinate in
+the axial plane and the dynamic sampling strategy to refine
+details of the density distribution in the reconstruction result.
+Extensive experiments in simulated and real data show that
+our model significantly outperforms existing state-of-the-art
+models without learning from paired images or prior individual
+knowledge. To the best of our knowledge, this is the first
+work of a non-adversarial-learning-based model in 3D radiology
+reconstruction from a single panoramic X-ray image.
+
+19:
+@inproceedings{ma2024px2tooth,
+  title={Px2tooth: Reconstructing the 3D point cloud teeth from a single panoramic x-ray},
+  author={Ma, Wen and Wu, Huikai and Xiao, Zikai and Feng, Yang and Wu, Jian and Liu, Zuozhu},
+  booktitle={International Conference on Medical Image Computing and Computer-Assisted Intervention},
+  pages={411--421},
+  year={2024},
+  organization={Springer}
+}
+
+Abstract. Reconstructing the 3D anatomical structures of the oral cavity,
+which originally reside in the cone-beam CT (CBCT), from a single
+2D Panoramic X-ray(PX) remains a critical yet challenging task, as it
+can effectively reduce radiation risks and treatment costs during the diagnostic
+in digital dentistry. However, current methods are either errorprone
+or only trained/evaluated on small-scale datasets (less than 50
+cases), resulting in compromised trustworthiness. In this paper, we propose
+PX2Tooth, a novel approach to reconstruct 3D teeth using a single
+PX image with a two-stage framework. First, we design the PXSegNet
+to segment the permanent teeth from the PX images, providing clear
+positional, morphological, and categorical information for each tooth.
+Subsequently, we design a novel tooth generation network (TGNet) that
+learns to transform random point clouds into 3D teeth. TGNet integrates
+the segmented patch information and introduces a Prior Fusion
+Module (PFM) to enhance the generation quality, especially in the root
+apex region. Moreover, we construct a dataset comprising 499 pairs of
+CBCT and Panoramic X-rays. Extensive experiments demonstrate that
+PX2Tooth can achieve an Intersection over Union (IoU) of 0.793, significantly
+surpassing previous methods, underscoring the great potential of
+artificial intelligence in digital dentistry.
+
+20:
+@article{lian2020deep,
+  title={Deep multi-scale mesh feature learning for automated labeling of raw dental surfaces from 3D intraoral scanners},
+  author={Lian, Chunfeng and Wang, Li and Wu, Tai-Hsien and Wang, Fan and Yap, Pew-Thian and Ko, Ching-Chang and Shen, Dinggang},
+  journal={IEEE transactions on medical imaging},
+  volume={39},
+  number={7},
+  pages={2440--2450},
+  year={2020},
+  publisher={IEEE}
+}   
+
+Abstract—Precisely labeling teeth on digitalized 3D dental
+surface models is the precondition for tooth position
+rearrangements in orthodontic treatment planning. However,
+it is a challenging task primarily due to the abnormal
+and varying appearance of patients’ teeth. The emerging
+utilization of intraoral scanners (IOSs) in clinics further
+increases the difficulty in automated tooth labeling, as the
+raw surfaces acquired by IOS are typically low-quality at
+gingival and deep intraoral regions. In recent years, some
+pioneering end-to-end methods (e.g., PointNet) have been
+proposed in the communities of computer vision and graphics
+to consume directly raw surface for 3D shape segmentation.
+Although these methods are potentially applicable
+to our task, most of them fail to capture fine-grained local
+geometric context that is critical to the identificationof small
+teeth with varying shapes and appearances. In this paper,
+we propose an end-to-end deep-learning method, called
+MeshSegNet, for automated tooth labeling on raw dental
+surfaces. Using multiple raw surface attributes as inputs,
+MeshSegNet integrates a series of graph-constrained learning
+modules along its forward path to hierarchically extract
+multi-scale local contextual features. Then, a dense fusion
+strategy is applied to combine local-to-globalgeometric features
+for the learning of higher-level features for mesh cell
+annotation. The predictions produced by our MeshSegNet
+are further post-processed by a graph-cut refinement step
+for final segmentation. We evaluated MeshSegNet using a
+real-patient dataset consisting of raw maxillary surfaces
+acquired by 3D IOS. Experimental results, performed 5-
+fold cross-validation, demonstrate that MeshSegNet significantly
+outperforms state-of-the-art deep learning methods
+for 3D shape segmentation.
+
+21:
+@article{abdi2015automatic,
+  title={Automatic segmentation of mandible in panoramic x-ray},
+  author={Abdi, Amir Hossein and Kasaei, Shohreh and Mehdizadeh, Mojdeh},
+  journal={Journal of Medical Imaging},
+  volume={2},
+  number={4},
+  pages={044003--044003},
+  year={2015},
+  publisher={Society of Photo-Optical Instrumentation Engineers}
+}
+
+Abstract. As the panoramic x-ray is the most common extraoral radiography in dentistry, segmentation of its
+anatomical structures facilitates diagnosis and registration of dental records. This study presents a fast and
+accurate method for automatic segmentation of mandible in panoramic x-rays. In the proposed four-step algorithm,
+a superior border is extracted through horizontal integral projections. A modified Canny edge detector
+accompanied by morphological operators extracts the inferior border of the mandible body. The exterior borders
+of ramuses are extracted through a contour tracing method based on the average model of mandible. The bestmatched
+template is fetched from the atlas of mandibles to complete the contour of left and right processes. The
+algorithm was tested on a set of 95 panoramic x-rays. Evaluating the results against manual segmentations of
+three expert dentists showed that the method is robust. It achieved an average performance of >93% in Dice
+similarity, specificity, and sensitivity.
+
+22:
+@inproceedings{song2021oral,
+  title={Oral-3d: Reconstructing the 3d structure of oral cavity from panoramic x-ray},
+  author={Song, Weinan and Liang, Yuan and Yang, Jiawei and Wang, Kun and He, Lei},
+  booktitle={Proceedings of the AAAI conference on artificial intelligence},
+  volume={35},
+  number={1},
+  pages={566--573},
+  year={2021}
+}
+
+Panoramic X-ray and Cone Beam Computed Tomography (CBCT) are two of the most general
+imaging methods in digital dentistry. While CBCT can provide higher-dimension information, the
+panoramic X-ray has the advantages of lower radiation dose and cost. Consequently, generating 3D
+information of bony tissues from the X-ray that can reflect dental diseases is of great interest. This
+technique can be even more helpful for developing areas where the CBCT is not always available
+due to the lack of screening machines or high screening cost. In this paper, we present Oral-3D
+to reconstruct the bone structure of oral cavity from a single panoramic X-ray image by taking
+advantage of some prior knowledge in oral structure, which conventionally can only be obtained by
+a 3D imaging method like CBCT. Specifically, we first train a generative network to back project
+the 2D X-ray image into 3D space, then restore the bone structure by registering the generated 3D
+image with the prior shape of the dental arch. To be noted, Oral-3D can restore both the density of
+bony tissues and the curved mandible surface. Experimental results show that our framework can
+reconstruct the 3D structure with significantly high quality. To the best of our knowledge, this is the
+first work that explores 3D reconstruction from a 2D image in dental health.
+
+23:
+@inproceedings{gu20243ddx,
+  title={3ddx: Bone surface reconstruction from a single standard-geometry radiograph via dual-face depth estimation},
+  author={Gu, Yi and Otake, Yoshito and Uemura, Keisuke and Takao, Masaki and Soufi, Mazen and Okada, Seiji and Sugano, Nobuhiko and Talbot, Hugues and Sato, Yoshinobu},
+  booktitle={International Conference on Medical Image Computing and Computer-Assisted Intervention},
+  pages={3--13},
+  year={2024},
+  organization={Springer}
+}
+
+Abstract. Radiography is widely used in orthopedics for its affordability
+and low radiation exposure. 3D reconstruction from a single radiograph,
+so-called 2D-3D reconstruction, offers the possibility of various
+clinical applications, but achieving clinically viable accuracy and computational
+efficiency is still an unsolved challenge. Unlike other areas in
+computer vision, X-ray imaging’s unique properties, such as ray penetration
+and fixed geometry, have not been fully exploited. We propose a
+novel approach that simultaneously learns multiple depth maps (frontand
+back-surface of multiple bones) derived from the X-ray image to computed
+tomography registration. The proposed method not only leverages
+the fixed geometry characteristic of X-ray imaging but also enhances the
+precision of the reconstruction of the whole surface. Our study involved
+600 CT and 2651 X-ray images (4 to 5 posed X-ray images per patient),
+demonstrating our method’s superiority over traditional approaches with
+a surface reconstruction error reduction from 4.78 mm to 1.96 mm. This
+significant accuracy improvement and enhanced computational efficiency
+suggest our approach’s potential for clinical application.
+
+24:
+@article{maken20232d,
+  title={2D-to-3D: a review for computational 3D image reconstruction from X-ray images},
+  author={Maken, Payal and Gupta, Abhishek},
+  journal={Archives of Computational Methods in Engineering},
+  volume={30},
+  number={1},
+  pages={85--114},
+  year={2023},
+  publisher={Springer}
+}
+
+In the clinical research, three-dimensional/volumetric anatomical structure of the human body is very significant for diagnosis,
+computer-aided surgery, surgical planning, patient follow-up, and biomechanical applications. Medical imaging procedures
+including MRI (Magnetic Resonance Imaging), CT (Computed Tomography), and CBCT (Cone-beam computed
+tomography) have certain drawbacks such as radiation exposure, availability, and cost. As a result, 3D reconstruction from
+2D X-ray images is an alternative way of achieving 3D models with significantly low radiation exposure to the patient. The
+purpose of this study is to provide a comprehensive view of 3D image reconstruction methods using X-ray images, and their
+applicability in the various anatomical sections of the human body. This study provides a critical analysis of the computational
+methods, requirements and steps for 3D reconstruction. This work includes a comparative critical analysis of the
+state-of-the-art approaches including the feature selection along with their benefits and drawbacks. This review motivates the
+researchers to work for 3D reconstruction using X-ray images as only a limited work is available in the area. It may provide a
+solution for many experts who are looking for techniques to reconstruct 3D models from X-ray images for clinical purposes.
+
+25:
+@inproceedings{li20243dpx,
+  title={3dpx: Progressive 2d-to-3d oral image reconstruction with hybrid mlp-cnn networks},
+  author={Li, Xiaoshuang and Meng, Mingyuan and Huang, Zimo and Bi, Lei and Delamare, Eduardo and Feng, Dagan and Sheng, Bin and Kim, Jinman},
+  booktitle={International Conference on Medical Image Computing and Computer-Assisted Intervention},
+  pages={25--34},
+  year={2024},
+  organization={Springer}
+}
+
+Abstract. Panoramic X-ray (PX) is a prevalent modality in dental practice for its
+wide availability and low cost. However, as a 2D projection image, PX does not
+contain 3D anatomical information, and therefore have limited use in dental applications
+that can benefit from 3D information, i.e., tooth angular misalignment
+detection and classification. Reconstructing 3D structures directly from 2D PX
+has recently been explored to address limitations. However, existing methods
+primarily rely on Convolutional Neural Networks (CNNs) for 2D-to-3D mapping
+which remains a challenge to correctly infer depth-axis spatial information. In
+addition, these methods are limited by the intrinsic locality of convolution operations,
+as the convolution kernels only capture the information of immediate
+neighborhood pixels. In this study, we propose a progressive hybrid Multilayer
+Perceptron (MLP)-CNN pyramid network (3DPX) for 2D-to-3D oral PX reconstruction.
+Our method was motivated by the recent advancement of MLP works,
+which . Our 3DPX extends the MLP definition with a progressive reconstruction
+strategy, where 3D images are progressively reconstructed in a pyramid network
+with guidance imposed on the intermediate reconstruction result at each of pyramid
+level. Our 3DPX further captures long-range visual dependence by integrating
+MLPs and CNNs, thus improving semantic understanding during the reconstruction
+process. Extensive experiments with two large datasets involving 464
+studies demonstrate that our 3DPX outperforms state-of-the-art 2D-to-3D oral
+reconstruction methods, including standalone MLP and transformers, in reconstruction
+quality, and also improves the performance of downstream angular misalignment
+classification tasks.
+
+26:
+@article{minhas2024artificial,
+  title={Artificial intelligence for 3D reconstruction from 2D panoramic X-rays to assess maxillary impacted canines},
+  author={Minhas, Sumeet and Wu, Tai-Hsien and Kim, Do-Gyoon and Chen, Si and Wu, Yi-Chu and Ko, Ching-Chang},
+  journal={Diagnostics},
+  volume={14},
+  number={2},
+  pages={196},
+  year={2024},
+  publisher={MDPI}
+}
+
+Abstract: The objective of this study was to explore the feasibility of current 3D reconstruction in
+assessing the position of maxillary impacted canines from 2D panoramic X-rays. A dataset was created
+using pre-treatment CBCT data from a total of 123 patients, comprising 74 patients with impacted
+canines and 49 patients without impacted canines. From all 74 subjects, we generated a dataset
+containing paired 2D panoramic X-rays and pseudo-3D images. This pseudo-3D image contained
+information about the location of the impacted canine in the buccal/lingual, mesial/distal, and
+apical/coronal positions. These data were utilized to train a deep-learning reconstruction algorithm,
+a generative AI. The location of the crown of the maxillary impacted canine was determined based
+on the output of the algorithm. The reconstruction was evaluated using the structure similarity
+index measure (SSIM) as a metric to indicate the quality of the reconstruction. The prediction of
+the impacted canine’s location was assessed in both the mesiodistal and buccolingual directions.
+The reconstruction algorithm predicts the position of the impacted canine in the buccal, middle, or
+lingual position with 41% accuracy, while the mesial and distal positions are predicted with 55%
+accuracy. The mean SSIM for the output is 0.71, with a range of 0.63 to 0.84. Our study represents
+the first application of AI reconstruction output for multidisciplinary care involving orthodontists,
+periodontists, and maxillofacial surgeons in diagnosing and treating maxillary impacted canines.
+Further development of deep-learning algorithms is necessary to enhance the robustness of dental
+reconstruction applications.
+
+27:
+@article{mei2023dtr,
+  title={DTR-net: dual-space 3D tooth model reconstruction from panoramic X-Ray images},
+  author={Mei, Lanzhuju and Fang, Yu and Zhao, Yue and Zhou, Xiang Sean and Zhu, Min and Cui, Zhiming and Shen, Dinggang},
+  journal={IEEE Transactions on Medical Imaging},
+  volume={43},
+  number={1},
+  pages={517--528},
+  year={2023},
+  publisher={IEEE}
+}
+
+Abstract—In digital dentistry, cone-beam computed
+tomography (CBCT) can provide complete 3D tooth models,
+yet suffers from a long concern of requiring excessive
+radiation dose and higher expense. Therefore, 3D tooth
+model reconstruction from 2D panoramic X-ray image is
+more cost-effective, and has attracted great interest in
+clinical applications. In this paper, we propose a novel
+dual-space framework, namely DTR-Net, to reconstruct 3D
+tooth model from 2D panoramic X-ray images in both image
+and geometric spaces. Specifically, in the image space,
+we apply a 2D-to-3D generative model to recover intensities
+of CBCT image, guided by a task-oriented tooth segmentation
+network in a collaborative training manner. Meanwhile,
+in the geometric space, we benefit from an implicit function
+network in the continuous space, learning using points to
+capture complicated tooth shapes with geometric properties.
+Experimental results demonstrate that our proposed
+DTR-Net achieves state-of-the-art performance both quantitatively
+and qualitatively in 3D tooth model reconstruction,
+indicating its potential application in dental practice.
+
+28:
+@inproceedings{liang2020x2teeth,
+  title={X2Teeth: 3D teeth reconstruction from a single panoramic radiograph},
+  author={Liang, Yuan and Song, Weinan and Yang, Jiawei and Qiu, Liang and Wang, Kun and He, Lei},
+  booktitle={International Conference on Medical Image Computing and Computer-Assisted Intervention},
+  pages={400--409},
+  year={2020},
+  organization={Springer}
+}
+
+Abstract. 3D teeth reconstruction from X-ray is important for den-
+tal diagnosis and many clinical operations. However, no existing work
+has explored the reconstruction of teeth for a whole cavity from a sin-
+gle panoramic radiograph. Dierent from single object reconstruction
+from photos, this task has the unique challenge of constructing multi-
+ple objects at high resolutions. To conquer this task, we develop a novel
+ConvNet X2Teeth that decomposes the task into teeth localization and
+single-shape estimation. We also introduce a patch-based training strat-
+egy, such that X2Teeth can be end-to-end trained for optimal perfor-
+mance. Extensive experiments show that our method can successfully
+estimate the 3D structure of the cavity and re
+ect the details for each
+tooth. Moreover, X2Teeth achieves a reconstruction IoU of 0.681, which
+signicantly outperforms the encoder-decoder method by 1:71 and the
+retrieval-based method by 1:52. Our method can also be promising for
+other multi-anatomy 3D reconstruction tasks.
+
+29:
+@article{shakya2023benchmarking,
+  title={Benchmarking encoder-decoder architectures for biplanar X-ray to 3D bone shape reconstruction},
+  author={Shakya, Mahesh and Khanal, Bishesh},
+  journal={Advances in Neural Information Processing Systems},
+  volume={36},
+  pages={20469--20481},
+  year={2023}
+}
+
+Various deep learning models have been proposed for 3D bone shape reconstruction
+from two orthogonal (biplanar) X-ray images. However, it is unclear how these
+models compare against each other since they are evaluated on different anatomy,
+cohort and (often privately held) datasets. Moreover, the impact of the commonly
+optimized image-based segmentation metrics such as dice score on the estimation
+of clinical parameters relevant in 2D-3D bone shape reconstruction is not well
+known. To move closer toward clinical translation, we propose a benchmarking
+framework that evaluates tasks relevant to real-world clinical scenarios, including
+reconstruction of fractured bones, bones with implants, robustness to population
+shift, and error in estimating clinical parameters. Our open-source platform provides
+reference implementations of 8 models (many of whose implementations
+were not publicly available), APIs to easily collect and preprocess 6 public datasets,
+and the implementation of automatic clinical parameter and landmark extraction
+methods. We present an extensive evaluation of 8 2D-3D models on equal footing
+using 6 public datasets comprising images for four different anatomies. Our results
+show that attention-based methods that capture global spatial relationships tend
+to perform better across all anatomies and datasets; performance on clinically
+relevant subgroups may be overestimated without disaggregated reporting; ribs are
+substantially more difficult to reconstruct compared to femur, hip and spine; and
+the dice score improvement does not always bring a corresponding improvement
+in the automatic estimation of clinically relevant parameters.
+
+30:
+@inproceedings{liang2021oralviewer,
+  title={OralViewer: 3D demonstration of dental surgeries for patient education with oral cavity reconstruction from a 2D panoramic X-ray},
+  author={Liang, Yuan and Qiu, Liang and Lu, Tiancheng and Fang, Zhujun and Tu, Dezhan and Yang, Jiawei and Shao, Yiting and Wang, Kun and Chen, Xiang'Anthony' and He, Lei},
+  booktitle={Proceedings of the 26th International Conference on Intelligent User Interfaces},
+  pages={553--563},
+  year={2021}
+}
+
+Patient’s understanding on forthcoming dental surgeries is required
+by patient-centered care and helps reduce anxiety. Due to the
+complexity of dental surgeries and the patient-dentist expertise
+gap, conventional techniques of patient education are usually not
+effective for explaining surgical steps. In this paper, we present
+OralViewer—the first interactive application that enables dentist’s
+demonstration of dental surgeries in 3D to promote patients’ understanding.
+OralViewer takes a single 2D panoramic dental X-ray
+to reconstruct patient-specific 3D teeth structures, which are then
+assembled with registered gum and jaw bone models for complete oral cavity modeling. During the demonstration, OralViewer enables
+dentists to show surgery steps with virtual dental instruments
+that can animate effects on a 3D model in real-time. A technical
+evaluation shows that our deep learning model achieves a mean
+Intersection over Union (IoU) of 0.771 for 3D teeth reconstruction.
+A patient study with 12 participants shows OralViewer can improve
+patients’ understanding of surgeries. A preliminary expert study
+with 3 board-certified dentists further verifies the clinical validity
+of our system.
+
