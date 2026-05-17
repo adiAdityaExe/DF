@@ -25,7 +25,7 @@ p24ds005@coed.svnit.ac.in, cprakash@coed.svnit.ac.in}
 \maketitle
 
 \begin{abstract}
-Panoramic dental X-rays (OPGs) are the most common dental images used in clinics because they are cheap and easy to obtain, but they are two-dimensional and lose all depth information. Cone-beam computed tomography (CBCT) gives a full 3D view of the jaw, yet it is expensive and exposes the patient to more radiation, so it is not used routinely. Recent deep-learning methods try to recover 3D jaw information from a single 2D panoramic X-ray, but progress is held back by the lack of large public datasets that pair a panoramic image with the matching 3D CBCT scan of the same patient. This paper addresses that data gap by presenting a physics-based pipeline that takes a 3D CBCT volume and produces a matching synthetic panoramic X-ray. The pipeline reads CBCT scans, prepares them into a standard form, fits a curved dental arch to each patient's jaw, traces X-ray paths along that arch using the Beer--Lambert law of X-ray attenuation, and then post-processes the image so that it resembles a real panoramic radiograph. Applied to 21 CBCT volumes, the pipeline produces 63 augmented panoramic--CBCT pairs packaged as a ready-to-use training dataset, with cross-view quality scores of SSIM~0.75 and PSNR~29.7\,dB on the identity condition, confirming stable and consistent output.
+Panoramic dental X-rays, also called orthopantomograms (OPGs), are the most common dental images used in clinics because they are cheap and easy to obtain, but they are two-dimensional and lose all depth information. Cone-beam computed tomography (CBCT) gives a full 3D view of the jaw, yet it is expensive and exposes the patient to more radiation, so it is not used routinely. Recent deep-learning methods try to recover 3D jaw information from a single 2D panoramic X-ray, but progress is held back by the lack of large public datasets that pair a panoramic image with the matching 3D CBCT scan of the same patient. This paper addresses that data gap by presenting a physics-based pipeline that takes a 3D CBCT volume and produces a matching synthetic panoramic X-ray, known as a digitally reconstructed radiograph (DRR). The pipeline reads CBCT scans, prepares them into a standard form, fits a curved dental arch to each patient's jaw, traces X-ray paths along that arch using the Beer--Lambert law of X-ray attenuation, and then post-processes the image so that it resembles a real panoramic radiograph. Applied to 21 CBCT volumes, the pipeline produces 63 augmented panoramic--CBCT pairs packaged as a ready-to-use training dataset, with cross-view quality scores of structural similarity index (SSIM)~0.75 and peak signal-to-noise ratio (PSNR)~29.7\,dB on the identity condition, confirming stable and consistent output.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -41,14 +41,39 @@ Good oral health is closely linked to overall body health, and quick, accurate d
 
 Cone-beam computed tomography (CBCT) solves this overlap problem by rotating an X-ray source around the patient and combining many 2D images into a full 3D volume, so doctors can view the jaw from any angle and even build a 3D mesh of the bone \cite{oliveira2025digital}. However, CBCT delivers a higher radiation dose (20--530\,\textmu Sv depending on the field of view) and costs INR\,1500--6000 in India, which puts it out of reach for routine checks and for many small clinics. This cost and dose gap between the cheap 2D panoramic X-ray and the expensive 3D CBCT scan has motivated a practical research question: \textit{can we recover 3D jaw information from the simple panoramic X-ray that is already widely available?} \cite{maken20232d}. Several recent deep-learning methods have tried to do exactly this \cite{song2021oral,song2023oral,park2024nebla,parida2025vit,ma2024px2tooth,mei2023dtr,li20243dpx,anusree2023deep,wang2024neural}, but all of them face the same bottleneck: there are very few public datasets that pair a 2D panoramic image with the matching 3D CBCT scan of the same patient \cite{sunilkumar2024recent}.
 
-This lack of paired training data is the central problem addressed in this paper. Without such data, deep-learning models for 2D-to-3D dental reconstruction cannot be trained or fairly evaluated; most existing methods must rely on idealised X-ray assumptions that do not match real machines or real patients, they miss fine details such as root shape and bone texture, and their evaluations report only technical image scores rather than actual diagnostic value. To close this gap, we present a physics-based pipeline that takes existing 3D CBCT volumes and generates matching synthetic panoramic X-rays, producing paired 2D--3D data that can be used directly for training. The pipeline fits a curved dental arch automatically to each patient's jaw, traces X-rays along that arch using the Beer--Lambert attenuation law, post-processes the output to resemble a real panoramic radiograph, and applies multi-view augmentation with small rotations, noise, and brightness changes to increase data variety. The rest of the paper is organised as follows: Section~\ref{sec:related} reviews related work, Section~\ref{sec:background} covers the imaging physics background, Section~\ref{sec:method} describes the full methodology, Section~\ref{sec:loss} defines the quality metrics, Section~\ref{sec:results} presents experimental results, Section~\ref{sec:discussion} discusses the findings, and Section~\ref{sec:conclusion} concludes with future directions.
+This lack of paired training data is the central problem addressed in this paper. Without such data, deep-learning models for 2D-to-3D dental reconstruction cannot be trained or fairly evaluated; most existing methods must rely on idealised X-ray assumptions that do not match real machines or real patients, they miss fine details such as root shape and bone texture, and their evaluations report only technical image scores rather than actual diagnostic value. To close this gap, we present a physics-based pipeline that takes existing 3D CBCT volumes and generates matching synthetic panoramic X-rays, producing paired 2D--3D data that can be used directly for training. The pipeline fits a curved dental arch automatically to each patient's jaw, traces X-rays along that arch using the Beer--Lambert attenuation law, post-processes the output to resemble a real panoramic radiograph, and applies multi-view augmentation with small rotations, noise, and brightness changes to increase data variety.
+
+To understand how this pipeline works, some background on dental anatomy and imaging physics is needed. Human teeth are divided into incisors, canines, premolars, and molars, sitting in the upper (maxillary) and lower (mandibular) jaws. The parts of a tooth that matter most for imaging are: enamel (the hardest tissue in the body, blocks the most X-rays), dentin (the layer below enamel, blocks a moderate amount), the pulp chamber (soft tissue inside the tooth, blocks very little), cementum, the periodontal ligament that holds the tooth in place, and the surrounding alveolar bone. Common dental problems include cavities (decay that moves through enamel and dentin to the pulp), gum disease (which can lead to bone loss), sensitivity from exposed dentin, and bite misalignment from crowding. Accurate imaging of these structures is what makes CBCT useful for implant planning, complex extractions, root canal work, and jaw pathology.
+
+Table~\ref{tab:modalities} lists the four main types of dental X-ray imaging. The panoramic X-ray gives the widest view but is only 2D. CBCT gives full 3D data and can be viewed from any direction or as a 3D mesh, but it costs more and uses more radiation.
+
+\begin{table}[t]
+\caption{Comparison of Dental Radiographic Modalities}
+\label{tab:modalities}
+\centering
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{p{1.55cm} p{1.7cm} p{2.55cm} p{0.6cm}}
+\toprule
+\textbf{Modality} & \textbf{Effective Dose} & \textbf{Key Use} & \textbf{Dim.} \\
+\midrule
+Intraoral (PA/BWX) & 1.5--8.2\,\textmu Sv & Caries, root, bone level & 2D \\
+Panoramic (OPG)   & 4--30\,\textmu Sv   & Impaction, cysts, tumours & 2D \\
+CBCT (small/med FOV) & 20--200\,\textmu Sv & Implants, canals, fractures & 3D \\
+CBCT (large FOV)  & Up to 530\,\textmu Sv & Full jaw pathology & 3D \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A DRR is a synthetic 2D X-ray that is built by sending virtual rays through a 3D volume (such as a CBCT scan) and adding up the X-ray attenuation along each ray using the Beer--Lambert law. DRRs are commonly used for imaging simulation, image registration, and---as in this work---creating synthetic panoramic X-rays from CBCT volumes. The Beer--Lambert law describes how X-rays lose intensity as they pass through tissue: the denser the tissue along the ray path, the more the X-ray is absorbed. Typical tissues encountered in dental imaging range from air (which absorbs almost nothing), through soft tissue (moderate absorption), to bone and dense enamel (high absorption). This attenuation-based projection is the physical foundation of our pipeline, and the formal equations are given in Section~\ref{sec:method}.
+
+The rest of the paper is organised as follows: Section~\ref{sec:related} reviews related work, Section~\ref{sec:method} describes the full methodology including the Beer--Lambert formulation, Section~\ref{sec:loss} defines the quality metrics, Section~\ref{sec:results} presents experimental results, Section~\ref{sec:discussion} discusses the findings, and Section~\ref{sec:conclusion} concludes with future directions.
 
 % =========================================================
 \section{Related Work}
 \label{sec:related}
 % =========================================================
 
-As noted in the introduction, the lack of paired 2D--3D dental data is the key obstacle for reconstruction methods. Before describing how we generate such data, we review the existing approaches that would benefit from it. The general problem of getting 3D anatomy back from one or a few X-ray images has been covered in several recent surveys. Maken and Gupta \cite{maken20232d} review computational ways of building 3D images from X-rays and explain why X-rays are a useful low-dose option compared with MRI, CT, or CBCT. Oliveira \cite{oliveira2025digital} reviews the move of dental imaging from 2D to 3D and explains how CBCT removes the overlap and distortion problems of 2D images, while also discussing low-dose protocols and AI-based image analysis. Sunilkumar \emph{et al.}\ \cite{sunilkumar2024recent} review methods that create panoramic X-rays from CBCT or phantoms, and discuss the clinical pros and cons of each approach.
+The lack of paired 2D--3D dental data is the key obstacle for reconstruction methods. Before describing how we generate such data, we review the existing approaches that would benefit from it. The general problem of getting 3D anatomy back from one or a few X-ray images has been covered in several recent surveys. Maken and Gupta \cite{maken20232d} review computational ways of building 3D images from X-rays and explain why X-rays are a useful low-dose option compared with MRI, CT, or CBCT. Oliveira \cite{oliveira2025digital} reviews the move of dental imaging from 2D to 3D and explains how CBCT removes the overlap and distortion problems of 2D images, while also discussing low-dose protocols and AI-based image analysis. Sunilkumar \emph{et al.}\ \cite{sunilkumar2024recent} review methods that create panoramic X-rays from CBCT or phantoms, and discuss the clinical pros and cons of each approach.
 
 The original NeRF idea \cite{mildenhall2021nerf} showed that a small neural network can store a 3D scene as a continuous field and produce very high-quality new views. Wang \emph{et al.}\ \cite{wang2024neural} review NeRF in medical imaging and highlight four main challenges: imaging physics, internal structure, object boundaries, and the meaning of colour and density. NeRF-based methods are heavy to compute and sensitive to camera-pose accuracy, which limits their use in clinics.
 
@@ -74,51 +99,22 @@ For tasks where motion during the scan matters, Xie \emph{et al.}\ \cite{xie2025
 
 Although our work is about synthesis, two related papers shape our arch assumptions. Abdi \emph{et al.}\ \cite{abdi2015automatic} present an atlas-assisted method for jaw segmentation in panoramic X-rays that reaches more than 93\% Dice on a 95-image set. Lian \emph{et al.}\ \cite{lian2020deep} introduce MeshSegNet, which labels teeth on raw 3D intraoral surfaces using multi-scale mesh features. Both papers show that anatomically aware shape priors clearly help dental analysis, which supports our choice of an auto-fitted parabolic arch.
 
-Most of the methods above need paired or partially paired 2D/3D data for training and evaluation \cite{park2024nebla,parida2025vit,ma2024px2tooth,song2023oral}. Our work takes a different position: instead of doing the reconstruction itself, we focus on \textit{creating} the paired training data that these methods need. We do this by projecting existing CBCT volumes into synthetic panoramic X-rays using Beer--Lambert physics and a curved, patient-adaptive arch in the spirit of \cite{sunilkumar2025panoramic}. Before describing this pipeline, we first cover the imaging physics that underpin it.
-
-% =========================================================
-\section{Domain Background: Dental Anatomy and Imaging Physics}
-\label{sec:background}
-% =========================================================
-
-The pipeline described in the next section relies on dental anatomy and X-ray physics, which we summarise here. Human teeth are divided into incisors, canines, premolars, and molars, sitting in the upper (maxillary) and lower (mandibular) jaws. The parts of a tooth that matter most for imaging are: enamel (the hardest tissue in the body, blocks the most X-rays), dentin (the layer below enamel, blocks a moderate amount), the pulp chamber (soft tissue inside the tooth, blocks very little), cementum, the periodontal ligament that holds the tooth in place, and the surrounding alveolar bone.
-
-Common dental problems include cavities (decay that moves through enamel and dentin to the pulp), gum disease (which can lead to bone loss), sensitivity from exposed dentin, and bite misalignment from crowding. Accurate imaging of these structures is what makes CBCT useful for implant planning, complex extractions, root canal work, and jaw pathology.
-
-Table~\ref{tab:modalities} lists the four main types of dental X-ray imaging. The panoramic X-ray gives the widest view but is only 2D. CBCT gives full 3D data and can be viewed from any direction or as a 3D mesh, but it costs more and uses more radiation.
-
-\begin{table}[t]
-\caption{Comparison of Dental Radiographic Modalities}
-\label{tab:modalities}
-\centering
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{p{1.55cm} p{1.7cm} p{2.55cm} p{0.6cm}}
-\toprule
-\textbf{Modality} & \textbf{Effective Dose} & \textbf{Key Use} & \textbf{Dim.} \\
-\midrule
-Intraoral (PA/BWX) & 1.5--8.2\,\textmu Sv & Caries, root, bone level & 2D \\
-Panoramic (OPG)   & 4--30\,\textmu Sv   & Impaction, cysts, tumours & 2D \\
-CBCT (small/med FOV) & 20--200\,\textmu Sv & Implants, canals, fractures & 3D \\
-CBCT (large FOV)  & Up to 530\,\textmu Sv & Full jaw pathology & 3D \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-A DRR is a synthetic 2D X-ray that is built by sending virtual rays through a 3D volume (such as a CBCT scan) and adding up the X-ray attenuation $\mu(\mathbf{x})$ along each ray using the Beer--Lambert law. DRRs are commonly used for imaging simulation, image registration, and---as in this work---creating synthetic panoramic X-rays from CBCT volumes.
-
-The Beer--Lambert law describes how X-rays are attenuated as they pass through tissue:
-\begin{equation}
-I = I_0 \exp\!\left(-\int_{\mathcal{L}} \mu(\mathbf{x})\,d\ell\right),
-\label{eq:beer}
-\end{equation}
-where $I_0$ is the X-ray intensity entering the tissue, $I$ is the intensity coming out, $\mu(\mathbf{x})$ is the attenuation at point $\mathbf{x}$, and the integral runs along the ray path $\mathcal{L}$. Typical attenuation values in mm$^{-1}$ are: air $\approx$0, soft tissue $\approx$0.01--0.025, bone $\approx$0.025--0.08, and dense enamel or metal $\approx$0.08. As an example, a 30\,mm path through bone ($\mu=0.05$) gives an integral of 1.5 and a transmitted intensity of $\exp(-1.5)\approx0.22$, which gives good contrast between bone and soft tissue. With these physical principles established, we now describe how our pipeline uses them to turn CBCT volumes into synthetic panoramic X-rays.
+Most of the methods above need paired or partially paired 2D/3D data for training and evaluation \cite{park2024nebla,parida2025vit,ma2024px2tooth,song2023oral}. Our work takes a different position: instead of doing the reconstruction itself, we focus on \textit{creating} the paired training data that these methods need. We do this by projecting existing CBCT volumes into synthetic panoramic X-rays using Beer--Lambert physics and a curved, patient-adaptive arch in the spirit of \cite{sunilkumar2025panoramic}.
 
 % =========================================================
 \section{Methodology}
 \label{sec:method}
 % =========================================================
 
-The pipeline takes raw CBCT volumes as input and outputs paired panoramic--CBCT training data through four stages: preprocessing, dental arch detection, curved-arch DRR rendering, and augmentation. We begin by describing the input data. We use 21 CBCT volumes stored in the standard NIfTI medical-imaging format. All scans were taken with the same scanner settings: shape $(604, 604, 412)$ voxels, with in-plane spacing of about $0.249\times0.249$\,mm and slice spacing of $0.25$\,mm. The intensity range varies from one patient to another (for example $[-2628, 5509]$ to $[-4904, 11129]$ HU), which reflects natural differences in bone density and the presence of metallic fillings. For each volume we record the patient identifier, voxel shape, voxel spacing, affine transform that maps voxel indices to patient coordinates, and basic intensity statistics (minimum, maximum, and mean).
+The pipeline is built on the Beer--Lambert law of X-ray attenuation, which describes how X-rays lose intensity as they pass through tissue:
+\begin{equation}
+I = I_0 \exp\!\left(-\int_{\mathcal{L}} \mu(\mathbf{x})\,d\ell\right),
+\label{eq:beer}
+\end{equation}
+where $I_0$ is the X-ray intensity entering the tissue, $I$ is the intensity coming out, $\mu(\mathbf{x})$ is the linear attenuation coefficient at point $\mathbf{x}$, and the integral runs along the ray path $\mathcal{L}$. Typical attenuation values in mm$^{-1}$ are: air $\approx$0, soft tissue $\approx$0.01--0.025, bone $\approx$0.025--0.08, and dense enamel or metal $\approx$0.08. As an example, a 30\,mm path through bone ($\mu=0.05$) gives an integral of 1.5 and a transmitted intensity of $\exp(-1.5)\approx0.22$, which gives good contrast between bone and soft tissue. Using this law, the pipeline takes raw CBCT volumes as input and outputs paired panoramic--CBCT training data through four stages: preprocessing, dental arch detection, curved-arch DRR rendering, and augmentation.
+
+\subsection{Input Data and Preprocessing}
+We begin by describing the input data. We use 21 CBCT volumes stored in the standard NIfTI medical-imaging format. All scans were taken with the same scanner settings: shape $(604, 604, 412)$ voxels, with in-plane spacing of about $0.249\times0.249$\,mm and slice spacing of $0.25$\,mm. The intensity range varies from one patient to another (for example $[-2628, 5509]$ to $[-4904, 11129]$ HU), which reflects natural differences in bone density and the presence of metallic fillings. For each volume we record the patient identifier, voxel shape, voxel spacing, affine transform that maps voxel indices to patient coordinates, and basic intensity statistics (minimum, maximum, and mean).
 
 Each CBCT volume goes through three preprocessing steps (Fig.~\ref{fig:full_pipeline}). In Step~1, we resample each volume so that all three axes have a voxel spacing of 1.0\,mm using linear interpolation, which gives an isotropic grid in which one voxel represents the same physical distance in every direction. In Step~2, the resampled volume is resized to a fixed cube of $128^3$ voxels using trilinear interpolation, ensuring every volume has the same shape for batched training. In Step~3, raw Hounsfield-like values are converted to linear attenuation coefficients $\mu$ (mm$^{-1}$) so that the Beer--Lambert projection has a physical meaning. The mapping assigns $\mu = 0$ for air ($\text{HU} < -200$), $\mu = 0.01 + \frac{(\text{HU}+200)}{500} \times 0.015$ for soft tissue ($-200 \leq \text{HU} < 300$), $\mu = 0.025 + \frac{(\text{HU}-300)}{2700} \times 0.055$ for bone ($300 \leq \text{HU} < 3000$), and caps $\mu$ at 0.08 for dense bone, enamel, or metal ($\text{HU} \geq 3000$). After preprocessing, all volumes have $\mu \in [0, 0.08]$. Across the 21 subjects, about 40.8--49.8\% of voxels are air and 8.5--16.1\% are bone. The volumes are then stored as numerical tensors that are ready for the next steps.
 
@@ -129,6 +125,7 @@ Each CBCT volume goes through three preprocessing steps (Fig.~\ref{fig:full_pipe
 \label{fig:full_pipeline}
 \end{figure*}
 
+\subsection{Dental Arch Detection}
 With the volumes preprocessed, the next stage is to detect each patient's dental arch so that the projection follows the curved jaw rather than a flat plane. The most important difference between a panoramic X-ray and a normal flat DRR is that the X-ray source does not move in a straight line. Instead, the machine moves along a curved path that follows the dental arch, so that all the teeth stay in focus during the scan. To copy this behaviour, we need to estimate a curved arch shape that is specific to each patient's jaw, instead of using one fixed arch for everyone. This idea is in line with the patient-tailored geometry of \cite{sunilkumar2025panoramic} and the adaptive elliptical path of \cite{parida2025vit}.
 
 We use a \emph{dynamic parabolic arch detector} that estimates four arch parameters $(c_x, c_y, w, d)$ for each CBCT volume: the horizontal centre, the front-to-back centre, the half-width, and the depth. The detector works on a top-down view of the bone in the tooth region of the scan, using the three filtering steps shown in Fig.~\ref{fig:arch_geom}.
@@ -136,17 +133,15 @@ We use a \emph{dynamic parabolic arch detector} that estimates four arch paramet
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.48\textwidth]{dental_arch_geometry.png}
-\caption{Patient-adaptive parabolic dental arch fitted to each CBCT volume. The bone-density top view of the tooth region (FIX1) is enhanced with CLAHE and thresholded. The front-to-back band (FIX2) and the largest connected piece (FIX3) give a clean bone mask, from which the arch parameters $(c_x, c_y, w, d)$ are computed. The fitted curve, focal trough, and per-column normal vectors are shown on top of the CBCT axial slice and the bone projection.}
+\caption{Patient-adaptive parabolic dental arch fitted to each CBCT volume. The bone-density top view of the tooth region is enhanced with CLAHE and thresholded. The front-to-back band and the largest connected piece give a clean bone mask, from which the arch parameters $(c_x, c_y, w, d)$ are computed. The fitted curve, focal trough, and per-column normal vectors are shown on top of the CBCT axial slice and the bone projection.}
 \label{fig:arch_geom}
 \end{figure}
 
-\textbf{FIX1 --- Restrict to the tooth region.} We use only the axial slices between $55\%$ and $70\%$ of the volume's height, which captures the tooth area and avoids the skull base and the upper jaw. Bone voxels in this slab are counted column-by-column to form a 2D bone-density top view: $B(x,y) = \sum_{z\in\text{Z-band}} \mathbf{1}[\mu(x,y,z)>0.025]$.
+In the first step, the detector restricts the input to the tooth region by using only the axial slices between $55\%$ and $70\%$ of the volume's height, which captures the teeth and avoids the skull base and the upper jaw. Bone voxels in this slab are counted column-by-column to form a 2D bone-density top view: $B(x,y) = \sum_{z\in\text{Z-band}} \mathbf{1}[\mu(x,y,z)>0.025]$. This top view is then normalised to $[0,1]$, enhanced with CLAHE (clip limit $0.03$, $256$ bins), and smoothed with a Gaussian filter ($\sigma = 1.5$). Otsu thresholding gives a candidate bone mask, which is cleaned by removing small specks ($<30$\,px), filling small holes ($<300$\,px), and applying binary closing with a small disk.
 
-\textbf{Cleaning step.} The 2D bone view is normalised to $[0,1]$, enhanced with CLAHE (clip limit $0.03$, $256$ bins), and smoothed with a Gaussian filter ($\sigma = 1.5$). Otsu thresholding gives a candidate bone mask, which is then cleaned by removing small specks ($<30$\,px), filling small holes ($<300$\,px), and applying binary closing with a small disk.
+In the second step, only the $40\%$--$80\%$ front-to-back band of the mask is kept. This removes back-of-the-skull bone that would otherwise pull the centre toward the back.
 
-\textbf{FIX2 --- Front-to-back band.} We keep only the $40\%$--$80\%$ front-to-back band of the mask. This removes back-of-the-skull bone that would otherwise pull the centre toward the back.
-
-\textbf{FIX3 --- Keep the largest piece.} We label connected pieces in the mask and keep only the largest one. This removes small fragments from metal fillings or noise. If fewer than 50 voxels remain, the detector reports failure and the pipeline falls back to a default arch.
+In the third step, connected pieces in the mask are labelled and only the largest one is kept. This removes small fragments from metal fillings or noise. If fewer than 50 voxels remain, the detector reports failure and the pipeline falls back to a default arch.
 
 The arch parameters are then computed from the surviving bone mask:
 \begin{align}
@@ -165,6 +160,7 @@ The final parabolic arch curve is created in the top-down (axial) plane as
 \end{equation}
 sampled at $N_u = 512$ equally spaced points along $t$. For each point, the unit tangent $\mathbf{T}_u$ is found by finite differences, and the unit normal $\mathbf{N}_u = (T_{u,y}, -T_{u,x})$ gives the direction in which the X-ray will be cast. The curve is defined in NIfTI LAS orientation, where $x$ goes left-to-right, $y$ goes back-to-front, the arch tip sits at the most front position, and the molar arms extend backward. On a sample volume, the detector gives $c_x = 60.7$, $c_y = 89.3$, $w = 39.9$, $d = 10.0$, with the arch covering a front-to-back range of $[74.3, 99.3]$ voxels. These values change automatically from patient to patient depending on jaw size and shape.
 
+\subsection{Curved-Arch DRR Rendering}
 Once the arch is fitted, the third stage renders the panoramic image. The panoramic DRR generator uses the curved-arch projection model shown in Fig.~\ref{fig:ray_result} and Fig.~\ref{fig:ray_equations}. The output image is $512 \times 256$ pixels in size (width $\times$ height, i.e., panoramic length $\times$ vertical extent). The focal trough depth is 30.0\,mm, which corresponds to about $30.0 / 1.17 \approx 25.6$ voxels in our normalised $128^3$ grid. We sample $D = 60$ depth points along each ray, giving a step size of $\Delta\ell = 0.5$\,mm per step.
 
 For each pixel $(u, v)$ in the panoramic image, the horizontal position $u$ picks a point on the arch curve and its inward normal $\mathbf{N}_u$, and the vertical position $v$ picks a height inside the CBCT volume. A ray of length equal to the focal trough depth is cast along $\mathbf{N}_u$ through the 3D volume, sampling $D=60$ points at equal intervals. At each sample point $\mathbf{x}_k$, the attenuation $\mu_k$ is read from the volume using trilinear interpolation. The Beer-Lambert line integral along the ray is then approximated as
@@ -188,9 +184,11 @@ The pixel value of the panoramic image is set to $P(u,v) = A(u,v)$, where larger
 \label{fig:ray_equations}
 \end{figure}
 
+\subsection{Post-Processing}
 The raw projection from the previous step is then post-processed so that it looks more like a real panoramic radiograph and is easier for clinicians to read. First, percentile windowing is applied using the 2nd and 98th percentiles of the pixel values as the display window, which removes outliers caused by dense metal. Second, the windowed image is linearly scaled to $[0, 1]$. Third, a gamma value of $\gamma = 0.8$ is applied to brighten the mid-tones, mimicking real OPG film. Fourth, unsharp masking is performed by subtracting a Gaussian-blurred copy from the image to sharpen tooth and bone edges.
 After these steps, the mean pixel value across all 21 volumes is between 0.631 and 0.766, with the full range $[0, 1]$ used. This shows that the output is consistently well normalised.
 
+\subsection{Augmentation and Dataset Packaging}
 The final stage of the pipeline is augmentation. To make the paired training set more varied, each of the 21 CBCT volumes is projected three times with different settings (Fig.~\ref{fig:rot_cmp}). For geometric augmentation, the volume is rotated by a small angle (a small negative angle, zero, and a small positive angle) around the vertical axis, simulating small differences in patient positioning during the scan. For intensity augmentation, we add Poisson noise (intensity parameter 1000) to mimic the quantum noise in real X-ray detection, and apply random brightness and contrast changes within a small range.
 
 This gives $21 \times 3 = 63$ augmented panoramic--CBCT pairs. Each pair stores the panoramic image, the volume index, the augmentation label, and the rotation angle. The whole dataset is packaged as a paired collection in which each element pairs a panoramic image of shape $[1, 256, 512]$ with a CBCT volume of shape $[1, 128, 128, 128]$ and a small metadata record. A standard data-loading layer with mini-batch support, shuffling, and on-the-fly augmentation wraps the collection so that it can plug directly into deep-learning training pipelines.
